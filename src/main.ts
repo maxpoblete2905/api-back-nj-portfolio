@@ -6,9 +6,10 @@ import { Logger } from '@nestjs/common';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
-    logger: ['log', 'error', 'warn', 'debug', 'verbose'], // Opcional: configura los niveles de log
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
+  app.enableCors();
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API description')
