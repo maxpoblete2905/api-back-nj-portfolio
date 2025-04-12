@@ -26,7 +26,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 @ApiTags('projects')
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
@@ -65,26 +65,7 @@ export class ProjectsController {
     status: HttpStatus.NO_CONTENT,
     description: 'No projects found',
   })
-  async findAll(
-    @Query('client') client?: string,
-    @Query('technology') technology?: string,
-  ) {
-    if (client) {
-      const result = await this.projectsService.findByClient(client);
-      if (!result.success) {
-        throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-      return result.data || [];
-    }
-
-    if (technology) {
-      const result = await this.projectsService.findByTechnology(technology);
-      if (!result.success) {
-        throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-      return result.data || [];
-    }
-
+  async findAll() {
     const result = await this.projectsService.findAll();
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
