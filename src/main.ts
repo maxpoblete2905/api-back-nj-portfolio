@@ -9,17 +9,15 @@ async function bootstrap() {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'], // Opcional: configura los niveles de log
   });
 
-  // Configuración de Swagger
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API description')
     .setVersion('1.0')
-    .addTag('default')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 8080;
   await app.listen(port);
   logger.log(`Application is running on: ${await app.getUrl()}`);
   logger.debug(`Swagger documentation available at: ${await app.getUrl()}/api`);

@@ -44,7 +44,6 @@ export class ProjectsService {
         createdAt: this.parseDate(data.createdAt),
         updatedAt: this.parseDate(data.updatedAt),
       };
-      this.logger.debug(`Formatted project: ${JSON.stringify(project)}`);
       return project;
     } catch (error) {
       this.logger.error(`Error formatting project: ${error.message}`, error.stack);
@@ -73,7 +72,7 @@ export class ProjectsService {
 
       const doc = await createResult.data.get();
       const project = this.formatProject(doc);
-      
+
       this.logger.log(`Project created successfully with ID: ${doc.id}`);
       return {
         success: true,
@@ -96,7 +95,7 @@ export class ProjectsService {
     this.logger.log('Fetching all projects');
     try {
       const getResult = await this.firestoreService.getDocs<Project>(this.collectionName);
-      
+
       if (!getResult.success || !getResult.data) {
         const errorMessage = getResult.message || 'Failed to fetch projects';
         this.logger.error(`Failed to fetch projects: ${errorMessage}`);
@@ -110,11 +109,11 @@ export class ProjectsService {
 
       const projects = getResult.data.docs.map(doc => this.formatProject(doc));
       this.logger.debug(`Found ${projects.length} projects`);
-      
+
       return {
         success: true,
-        message: projects.length > 0 
-          ? 'Projects retrieved successfully' 
+        message: projects.length > 0
+          ? 'Projects retrieved successfully'
           : 'No projects found',
         data: projects,
         statusCode: projects.length > 0 ? 200 : 204
@@ -134,7 +133,7 @@ export class ProjectsService {
     this.logger.log(`Fetching project with ID: ${id}`);
     try {
       const getResult = await this.firestoreService.getDoc<Project>(this.collectionName, id);
-      
+
       if (!getResult.success || !getResult.data) {
         const errorMessage = getResult.message || 'Project not found';
         this.logger.warn(`Project not found with ID: ${id}`);
@@ -147,7 +146,7 @@ export class ProjectsService {
 
       const project = this.formatProject(getResult.data);
       this.logger.debug(`Found project with ID: ${id}`);
-      
+
       return {
         success: true,
         message: 'Project retrieved successfully',
@@ -191,7 +190,7 @@ export class ProjectsService {
 
       const updatedProject = await this.findOne(id);
       this.logger.log(`Project ${id} updated successfully`);
-      
+
       return updatedProject;
     } catch (error) {
       this.logger.error(`Failed to update project ${id}: ${error.message}`, error.stack);
@@ -214,7 +213,7 @@ export class ProjectsService {
       }
 
       const deleteResult = await this.firestoreService.deleteDoc(this.collectionName, id);
-      
+
       if (!deleteResult.success) {
         this.logger.error(`Failed to delete project ${id}: ${deleteResult.message}`);
         return {
@@ -265,10 +264,10 @@ export class ProjectsService {
 
       const projects = queryResult.data.docs.map(doc => this.formatProject(doc));
       this.logger.debug(`Found ${projects.length} projects for client ${client}`);
-      
+
       return {
         success: true,
-        message: projects.length > 0 
+        message: projects.length > 0
           ? `Found ${projects.length} projects for client ${client}`
           : `No projects found for client ${client}`,
         data: projects,
@@ -308,10 +307,10 @@ export class ProjectsService {
 
       const projects = queryResult.data.docs.map(doc => this.formatProject(doc));
       this.logger.debug(`Found ${projects.length} projects with technology ${technology}`);
-      
+
       return {
         success: true,
-        message: projects.length > 0 
+        message: projects.length > 0
           ? `Found ${projects.length} projects with technology ${technology}`
           : `No projects found with technology ${technology}`,
         data: projects,
@@ -338,7 +337,7 @@ export class ProjectsService {
       }));
 
       const batchResult = await this.firestoreService.runBatch(operations);
-      
+
       if (!batchResult.success) {
         this.logger.error(`Batch creation failed: ${batchResult.message}`);
         return batchResult;
