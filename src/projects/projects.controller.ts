@@ -8,7 +8,7 @@ import {
   Delete,
   HttpStatus,
   HttpException,
-  UseInterceptors,
+  Inject,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -21,14 +21,16 @@ import {
 } from '@nestjs/swagger';
 import { Project } from './entities/project.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @ApiTags('projects')
 @Controller('projects')
-@UseInterceptors(CacheInterceptor)
 export class ProjectsController {
-  cacheManager: any;
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(
+    private readonly projectsService: ProjectsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
+  ) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
@@ -42,15 +44,14 @@ export class ProjectsController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid request data',
   })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: 'Internal server error',
-  })
   async create(@Body() createProjectDto: CreateProjectDto) {
     const result = await this.projectsService.create(createProjectDto);
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // Invalidar caché de lista de proyectos
+    await this.cacheManager.del('all_projects');
     return result.data;
   }
 
@@ -61,19 +62,25 @@ export class ProjectsController {
     description: 'List of all projects',
     type: [Project],
   })
-  @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
-    description: 'No projects found',
-  })
-  @CacheKey('all_products')
-  @CacheTTL(0)
   async findAll() {
+    const cacheKey = 'all_projects';
+    const cached = await this.cacheManager.get(cacheKey);
+
+    if (cached) {
+      console.log("Retornando proyectos desde caché");
+      return cached;
+    }
+
     console.log("Ejecutando consulta real (no caché)");
     const result = await this.projectsService.findAll();
+
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return result.data || [];
+
+    const data = result.data || [];
+    await this.cacheManager.set(cacheKey, data, 0); // TTL 0 = sin expiración
+    return data;
   }
 
   @Get(':id')
@@ -84,24 +91,26 @@ export class ProjectsController {
     description: 'Project found',
     type: Project,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found',
-  })
-  @CacheKey('project_${{id}}')
-  @CacheTTL(0)
   async findOne(@Param('id') id: string) {
+    const cacheKey = `project_${id}`;
+    const cached = await this.cacheManager.get(cacheKey);
+
+    if (cached) {
+      console.log("Retornando proyecto desde caché");
+      return cached;
+    }
+
     console.log("Ejecutando consulta real (no caché)");
     const result = await this.projectsService.findOne(id);
 
     if (!result.success) {
-      await this.cacheManager.del(`project_${id}`);
+      await this.cacheManager.del(cacheKey);
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    await this.cacheManager.set(cacheKey, result.data, 0);
     return result.data;
   }
-
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a project' })
@@ -112,22 +121,22 @@ export class ProjectsController {
     description: 'Project updated successfully',
     type: Project,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid request data',
-  })
   async update(
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     const result = await this.projectsService.update(id, updateProjectDto);
+
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // Actualizar cachés afectadas
+    await Promise.all([
+      this.cacheManager.del(`project_${id}`),
+      this.cacheManager.del('all_projects')
+    ]);
+
     return result.data;
   }
 
@@ -138,15 +147,19 @@ export class ProjectsController {
     status: HttpStatus.OK,
     description: 'Project deleted successfully',
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found',
-  })
   async remove(@Param('id') id: string) {
     const result = await this.projectsService.remove(id);
+
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // Invalidar cachés afectadas
+    await Promise.all([
+      this.cacheManager.del(`project_${id}`),
+      this.cacheManager.del('all_projects')
+    ]);
+
     return { message: result.message };
   }
 }

@@ -74,7 +74,7 @@ export class ProjectsService {
         };
       }
       this.cacheService.resetCache()
-      this.cacheService.deleteKey(`all_products`)
+      this.cacheService.deleteKey(`all_project`)
       const doc = await createResult.data.get();
       const project = this.formatProject(doc);
 
@@ -229,7 +229,7 @@ export class ProjectsService {
           statusCode: deleteResult.statusCode || 500
         };
       }
-      this.cacheService.deleteKey(`all_products`)
+
       this.logger.log(`Project ${id} deleted successfully`);
       return {
         success: true,
@@ -241,92 +241,6 @@ export class ProjectsService {
       return {
         success: false,
         message: 'Failed to delete project',
-        error: error.message,
-        statusCode: 500
-      };
-    }
-  }
-
-  async findByClient(client: string): Promise<StandardResponse<Project[]>> {
-    this.logger.log(`Searching projects for client: ${client}`);
-    try {
-      const queryResult = await this.firestoreService.queryDocs<Project>(
-        this.collectionName,
-        'client',
-        '==',
-        client
-      );
-
-      if (!queryResult.success || !queryResult.data) {
-        const errorMessage = queryResult.message || 'Failed to query projects';
-        this.logger.error(`Failed to query projects for client ${client}: ${errorMessage}`);
-        return {
-          success: false,
-          message: errorMessage,
-          error: queryResult.error,
-          statusCode: queryResult.statusCode || 500
-        };
-      }
-
-      const projects = queryResult.data.docs.map(doc => this.formatProject(doc));
-      this.logger.debug(`Found ${projects.length} projects for client ${client}`);
-
-      return {
-        success: true,
-        message: projects.length > 0
-          ? `Found ${projects.length} projects for client ${client}`
-          : `No projects found for client ${client}`,
-        data: projects,
-        statusCode: projects.length > 0 ? 200 : 204
-      };
-    } catch (error) {
-      this.logger.error(`Failed to search projects for client ${client}: ${error.message}`, error.stack);
-      return {
-        success: false,
-        message: 'Failed to search projects',
-        error: error.message,
-        statusCode: 500
-      };
-    }
-  }
-
-  async findByTechnology(technology: string): Promise<StandardResponse<Project[]>> {
-    this.logger.log(`Searching projects with technology: ${technology}`);
-    try {
-      const queryResult = await this.firestoreService.queryDocs<Project>(
-        this.collectionName,
-        'technologies',
-        'array-contains',
-        technology
-      );
-
-      if (!queryResult.success || !queryResult.data) {
-        const errorMessage = queryResult.message || 'Failed to query projects';
-        this.logger.error(`Failed to query projects with technology ${technology}: ${errorMessage}`);
-        return {
-          success: false,
-          message: errorMessage,
-          error: queryResult.error,
-          statusCode: queryResult.statusCode || 500
-        };
-      }
-
-      const projects = queryResult.data.docs.map(doc => this.formatProject(doc));
-      this.logger.debug(`Found ${projects.length} projects with technology ${technology}`);
-
-      return {
-        success: true,
-        message: projects.length > 0
-          ? `Found ${projects.length} projects with technology ${technology}`
-          : `No projects found with technology ${technology}`,
-        data: projects,
-        statusCode: projects.length > 0 ? 200 : 204
-      };
-    } catch (error) {
-      this.logger.error(`Failed to search projects with technology ${technology}: ${error.message}`, error.stack);
-      return {
-        success: false,
-        message: 'Failed to search projects',
         error: error.message,
         statusCode: 500
       };
