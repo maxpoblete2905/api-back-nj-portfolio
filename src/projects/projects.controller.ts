@@ -6,9 +6,9 @@ import {
   Param,
   Put,
   Delete,
-  Query,
   HttpStatus,
   HttpException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -17,15 +17,17 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
 import { Project } from './entities/project.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('projects')
 @Controller('projects')
+@UseInterceptors(CacheInterceptor)
 export class ProjectsController {
+  cacheManager: any;
   constructor(private readonly projectsService: ProjectsService) { }
 
   @Post()
@@ -54,8 +56,6 @@ export class ProjectsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all projects' })
-  @ApiQuery({ name: 'client', required: false, description: 'Filter by client' })
-  @ApiQuery({ name: 'technology', required: false, description: 'Filter by technology' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of all projects',
@@ -65,7 +65,10 @@ export class ProjectsController {
     status: HttpStatus.NO_CONTENT,
     description: 'No projects found',
   })
+  @CacheKey('all_products')
+  @CacheTTL(0)
   async findAll() {
+    console.log("Ejecutando consulta real (no caché)");
     const result = await this.projectsService.findAll();
     if (!result.success) {
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
@@ -85,13 +88,20 @@ export class ProjectsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Project not found',
   })
+  @CacheKey('project_${{id}}')
+  @CacheTTL(0)
   async findOne(@Param('id') id: string) {
+    console.log("Ejecutando consulta real (no caché)");
     const result = await this.projectsService.findOne(id);
+
     if (!result.success) {
+      await this.cacheManager.del(`project_${id}`);
       throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
     return result.data;
   }
+
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a project' })

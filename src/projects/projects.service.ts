@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Project } from './entities/project.entity';
 import { FirestoreService } from 'src/firebase/services/firestore/firestore.service';
+import { CacheService } from 'src/services/cache.service';
 
 interface StandardResponse<T = any> {
   success: boolean;
@@ -15,7 +16,10 @@ export class ProjectsService {
   private readonly collectionName = 'projects';
   private readonly logger = new Logger(ProjectsService.name);
 
-  constructor(private readonly firestoreService: FirestoreService) {
+  constructor(
+    private readonly firestoreService: FirestoreService,
+    private readonly cacheService: CacheService
+  ) {
     this.logger.log('ProjectsService initialized');
   }
 
@@ -69,7 +73,8 @@ export class ProjectsService {
           statusCode: createResult.statusCode || 500
         };
       }
-
+      this.cacheService.resetCache()
+      this.cacheService.deleteKey(`all_products`)
       const doc = await createResult.data.get();
       const project = this.formatProject(doc);
 
@@ -188,6 +193,7 @@ export class ProjectsService {
         };
       }
 
+      this.cacheService.deleteKey(`project_${id}`)
       const updatedProject = await this.findOne(id);
       this.logger.log(`Project ${id} updated successfully`);
 
@@ -223,7 +229,7 @@ export class ProjectsService {
           statusCode: deleteResult.statusCode || 500
         };
       }
-
+      this.cacheService.deleteKey(`all_products`)
       this.logger.log(`Project ${id} deleted successfully`);
       return {
         success: true,
