@@ -8,6 +8,7 @@ import {
     Delete,
     HttpStatus,
     HttpException,
+    UseGuards,
 } from '@nestjs/common';
 import { AcademicService } from './academic.service';
 import { CreateAcademicDto } from './dto/create-academic.dto';
@@ -19,9 +20,11 @@ import {
     ApiParam,
     ApiBody,
 } from '@nestjs/swagger';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('Academic')
 @Controller('academic')
+@UseGuards(ApiKeyGuard)
 export class AcademicController {
     constructor(private readonly academicService: AcademicService) { }
 
