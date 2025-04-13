@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { FirebaseModule } from './firebase/firebase.module';
-import { ProjectsModule } from './projects/projects.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { SkillsModule } from './skills/skills.module';
-import { PersonalInformationModule } from './personal-information/personal-information.module';
-import { TechnologiesModule } from './technologies/technologies.module';
+import { PersonalInformationModule } from './modules/personal-information/personal-information.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { SkillsModule } from './modules/skills/skills.module';
+import { TechnologiesModule } from './modules/technologies/technologies.module';
+
 
 @Module({
   imports: [
