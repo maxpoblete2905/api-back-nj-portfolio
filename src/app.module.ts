@@ -4,6 +4,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { SkillsModule } from './skills/skills.module';
 import { PersonalInformationModule } from './personal-information/personal-information.module';
+import { TechnologiesModule } from './technologies/technologies.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PersonalInformationModule } from './personal-information/personal-infor
     }),
     SkillsModule,
     PersonalInformationModule,
+    TechnologiesModule,
   ],
 })
 export class AppModule { }
