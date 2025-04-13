@@ -1,4 +1,3 @@
-// src/contacts/interfaces/contact.interface.ts
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface Contact {
