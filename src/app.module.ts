@@ -5,6 +5,7 @@ import { PersonalInformationModule } from './modules/personal-information/person
 import { ProjectsModule } from './modules/projects/projects.module';
 import { SkillsModule } from './modules/skills/skills.module';
 import { TechnologiesModule } from './modules/technologies/technologies.module';
+import { AcademicModule } from './modules/academic/academic.module';
 
 
 @Module({
@@ -18,6 +19,7 @@ import { TechnologiesModule } from './modules/technologies/technologies.module';
     SkillsModule,
     PersonalInformationModule,
     TechnologiesModule,
+    AcademicModule,
   ],
 })
 export class AppModule { }

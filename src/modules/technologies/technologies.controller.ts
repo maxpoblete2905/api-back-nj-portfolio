@@ -1,4 +1,3 @@
-// src/technologies/technologies.controller.ts
 import {
     Controller,
     Get,
@@ -10,6 +9,7 @@ import {
     HttpStatus,
     HttpException,
     Inject,
+    UseGuards,
   } from '@nestjs/common';
   import { TechnologiesService } from './technologies.service';
   import { CreateTechnologyDto } from './dto/create-technology.dto';
@@ -24,9 +24,11 @@ import {
   import { Technology } from './interfaces/technology.interface';
   import { Cache } from 'cache-manager';
   import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
   
   @ApiTags('technologies')
   @Controller('technologies')
+  @UseGuards(ApiKeyGuard)
   export class TechnologiesController {
     constructor(
       private readonly technologiesService: TechnologiesService,

@@ -9,6 +9,7 @@ import {
   HttpStatus,
   HttpException,
   Inject,
+  UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -23,9 +24,11 @@ import { Project } from './entities/project.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('projects')
 @Controller('projects')
+@UseGuards(ApiKeyGuard)
 export class ProjectsController {
   constructor(
     private readonly projectsService: ProjectsService,
@@ -119,7 +122,7 @@ export class ProjectsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Project updated successfully',
-    type: Project,
+    type: UpdateProjectDto,
   })
   async update(
     @Param('id') id: string,

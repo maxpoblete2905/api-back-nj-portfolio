@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { Skill } from './interfaces/skill.interface';
 import { FirestoreService } from 'src/firebase/firestore.service';
-import { CacheService } from 'src/services/cache.service';
 import { StandardResponse } from 'src/interface/standard-response.interface';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class SkillsService {
@@ -12,7 +12,7 @@ export class SkillsService {
 
     constructor(
         private readonly firestoreService: FirestoreService,
-        private readonly cacheService: CacheService
+        @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
     ) {
         this.logger.log('SkillsService initialized');
     }
@@ -56,9 +56,7 @@ export class SkillsService {
                 };
             }
 
-            this.cacheService.clear();
-            this.cacheService.delete('all_skills');
-
+            this.cacheService.del('all_skills');
             const doc = await createResult.data.get();
             const skill = this.formatSkill(doc);
 
@@ -175,8 +173,8 @@ export class SkillsService {
                 };
             }
 
-            this.cacheService.delete(`skill_${id}`);
-            this.cacheService.delete('all_skills');
+            this.cacheService.del(`skill_${id}`);
+            this.cacheService.del('all_skills');
 
             const updatedSkill = await this.findOne(id);
             this.logger.log(`Skill ${id} updated successfully`);
@@ -214,8 +212,8 @@ export class SkillsService {
                 };
             }
 
-            this.cacheService.delete(`skill_${id}`);
-            this.cacheService.delete('all_skills');
+            this.cacheService.del(`skill_${id}`);
+            this.cacheService.del('all_skills');
 
             this.logger.log(`Skill ${id} deleted successfully`);
             return {

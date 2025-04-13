@@ -9,6 +9,7 @@ import {
     HttpStatus,
     HttpException,
     Inject,
+    UseGuards,
 } from '@nestjs/common';
 import { CreatePersonalInfoDto } from './dto/create-personal-info.dto';
 import { UpdatePersonalInfoDto } from './dto/update-personal-info.dto';
@@ -23,9 +24,11 @@ import { PersonalInformation } from './interfaces/personal-info.interface';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PersonalInfoService } from './personal-information.service';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('personal-information')
 @Controller('personal-information')
+@UseGuards(ApiKeyGuard)
 export class PersonalInfoController {
     constructor(
         private readonly personalInfoService: PersonalInfoService,
@@ -77,7 +80,7 @@ export class PersonalInfoController {
         }
 
         const data = result.data || [];
-        await this.cacheManager.set(cacheKey, data, 3600000); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, data);
         return data;
     }
 
@@ -105,7 +108,7 @@ export class PersonalInfoController {
             );
         }
 
-        await this.cacheManager.set(cacheKey, result.data, 3600000); // Cache for 1 hour
+        await this.cacheManager.set(cacheKey, result.data);
         return result.data;
     }
 

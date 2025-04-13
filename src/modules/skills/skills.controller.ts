@@ -11,6 +11,7 @@ import {
     HttpStatus,
     HttpException,
     Inject,
+    UseGuards,
 } from '@nestjs/common';
 import { SkillsService } from './skills.service';
 import { CreateSkillDto } from './dto/create-skill.dto';
@@ -25,9 +26,11 @@ import {
 } from '@nestjs/swagger';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('skills')
 @Controller('skills')
+@UseGuards(ApiKeyGuard)
 export class SkillsController {
     constructor(
         private readonly skillsService: SkillsService,

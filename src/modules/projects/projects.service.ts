@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Project } from './entities/project.entity';
-import { CacheService } from 'src/services/cache.service';
 import { FirestoreService } from 'src/firebase/firestore.service';
 import { StandardResponse } from 'src/interface/standard-response.interface';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ProjectsService {
@@ -11,7 +11,7 @@ export class ProjectsService {
 
     constructor(
         private readonly firestoreService: FirestoreService,
-        private readonly cacheService: CacheService
+        @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
     ) {
         this.logger.log('ProjectsService initialized');
     }
@@ -66,10 +66,8 @@ export class ProjectsService {
                     statusCode: createResult.statusCode || 500
                 };
             }
-            
-            this.cacheService.clear();
-            this.cacheService.delete('all_projects');
-            
+
+            this.cacheService.del('all_projects');
             const doc = await createResult.data.get();
             const project = this.formatProject(doc);
 
@@ -188,8 +186,8 @@ export class ProjectsService {
                 };
             }
 
-            this.cacheService.delete(`project_${id}`);
-            this.cacheService.delete('all_projects');
+            this.cacheService.del(`project_${id}`);
+            this.cacheService.del('all_projects');
 
             const updatedProject = await this.findOne(id);
             this.logger.log(`Project ${id} updated successfully`);
@@ -227,8 +225,8 @@ export class ProjectsService {
                 };
             }
 
-            this.cacheService.delete(`project_${id}`);
-            this.cacheService.delete('all_projects');
+            this.cacheService.del(`project_${id}`);
+            this.cacheService.del('all_projects');
 
             this.logger.log(`Project ${id} deleted successfully`);
             return {

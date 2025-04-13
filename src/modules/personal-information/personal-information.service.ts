@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { FirestoreService } from 'src/firebase/firestore.service';
-import { CacheService } from 'src/services/cache.service';
 import { PersonalInformation } from './interfaces/personal-info.interface';
 import { CreatePersonalInfoDto } from './dto/create-personal-info.dto';
 import { UpdatePersonalInfoDto } from './dto/update-personal-info.dto';
 import { StandardResponse } from 'src/interface/standard-response.interface';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class PersonalInfoService {
@@ -13,7 +13,7 @@ export class PersonalInfoService {
 
     constructor(
         private readonly firestoreService: FirestoreService,
-        private readonly cacheService: CacheService
+        @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
     ) {
         this.logger.log('PersonalInfoService initialized');
     }
@@ -62,9 +62,7 @@ export class PersonalInfoService {
                 };
             }
 
-            this.cacheService.clear();
-            this.cacheService.delete('personal_info');
-
+            this.cacheService.del('personal_info');
             const doc = await createResult.data.get();
             const personalInfo = this.formatPersonalInfo(doc);
 
@@ -183,8 +181,8 @@ export class PersonalInfoService {
                 };
             }
 
-            this.cacheService.delete(`personal_info_${id}`);
-            this.cacheService.delete('personal_info');
+            this.cacheService.del(`personal_info_${id}`);
+            this.cacheService.del('personal_info');
 
             const updatedInfo = await this.findOne(id);
             this.logger.log(`Personal info ${id} updated successfully`);
@@ -222,8 +220,8 @@ export class PersonalInfoService {
                 };
             }
 
-            this.cacheService.delete(`personal_info_${id}`);
-            this.cacheService.delete('personal_info');
+            this.cacheService.del(`personal_info_${id}`);
+            this.cacheService.del('personal_info');
 
             this.logger.log(`Personal info ${id} deleted successfully`);
             return {

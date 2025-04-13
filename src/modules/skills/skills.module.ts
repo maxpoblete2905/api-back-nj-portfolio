@@ -3,13 +3,12 @@ import { Module } from '@nestjs/common';
 import { SkillsController } from './skills.controller';
 import { SkillsService } from './skills.service';
 import { FirestoreService } from 'src/firebase/firestore.service';
-import { CacheService } from 'src/services/cache.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import { FirebaseModule } from 'src/firebase/firebase.module';
 
 @Module({
   imports: [FirebaseModule, CacheModule.register()],
   controllers: [SkillsController],
-  providers: [SkillsService, FirestoreService, CacheService],
+  providers: [SkillsService, FirestoreService],
 })
 export class SkillsModule { }

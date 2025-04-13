@@ -1,11 +1,10 @@
-// src/technologies/technologies.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { FirestoreService } from 'src/firebase/firestore.service';
-import { CacheService } from 'src/services/cache.service';
 import { Technology } from './interfaces/technology.interface';
 import { CreateTechnologyDto } from './dto/create-technology.dto';
 import { UpdateTechnologyDto } from './dto/update-technology.dto';
 import { StandardResponse } from 'src/interface/standard-response.interface';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class TechnologiesService {
@@ -14,7 +13,7 @@ export class TechnologiesService {
 
     constructor(
         private readonly firestoreService: FirestoreService,
-        private readonly cacheService: CacheService
+        @Inject(CACHE_MANAGER) private readonly cacheService: Cache,
     ) {
         this.logger.log('TechnologiesService initialized');
     }
@@ -60,9 +59,7 @@ export class TechnologiesService {
                 };
             }
 
-            this.cacheService.clear();
-            this.cacheService.delete('all_technologies');
-
+            this.cacheService.del('all_technologies');
             const doc = await createResult.data.get();
             const technology = this.formatTechnology(doc);
 
@@ -181,9 +178,8 @@ export class TechnologiesService {
                 };
             }
 
-            this.cacheService.delete(`technology_${id}`);
-            this.cacheService.delete('all_technologies');
-
+            this.cacheService.del(`technology_${id}`);
+            this.cacheService.del('all_technologies');
             const updatedTech = await this.findOne(id);
             this.logger.log(`Technology ${id} updated successfully`);
 
@@ -220,9 +216,8 @@ export class TechnologiesService {
                 };
             }
 
-            this.cacheService.delete(`technology_${id}`);
-            this.cacheService.delete('all_technologies');
-
+            this.cacheService.del(`technology_${id}`);
+            this.cacheService.del('all_technologies');
             this.logger.log(`Technology ${id} deleted successfully`);
             return {
                 success: true,

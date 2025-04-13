@@ -11,15 +11,7 @@ import {
     Firestore,
 } from 'firebase-admin/firestore';
 import { FirebaseConfig } from 'src/firebase.config';
-
-// Interface para la respuesta estándar
-interface StandardResponse<T = any> {
-    success: boolean;
-    message: string;
-    data?: T;
-    error?: any;
-    statusCode?: number;
-}
+import { StandardResponse } from 'src/interface/standard-response.interface';
 
 @Injectable()
 export class FirestoreService {
