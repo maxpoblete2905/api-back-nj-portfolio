@@ -10,7 +10,7 @@ import {
     FieldValue,
     Firestore,
 } from 'firebase-admin/firestore';
-import { FirebaseConfig } from '../../../firebase.config';
+import { FirebaseConfig } from 'src/firebase.config';
 
 // Interface para la respuesta estándar
 interface StandardResponse<T = any> {

@@ -38,7 +38,7 @@ export class ProjectsController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Project created successfully',
-    type: Project,
+    type: CreateProjectDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,

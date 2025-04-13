@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { FirebaseConfig } from 'src/firebase.config';
-import { FirestoreService } from './services/firestore/firestore.service';
+import { FirestoreService } from './firestore.service';
 
 @Module({
   providers: [FirebaseConfig, FirestoreService],
