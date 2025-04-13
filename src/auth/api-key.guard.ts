@@ -3,8 +3,7 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-    private readonly SECRET = 'TU_SECRETO_COMPARTIDO';
-    private readonly API_KEY_TTL = 24 * 60 * 60 * 1000;
+    private readonly SECRET = process.env.SECRET
 
     private generateApiKey(): string {
         const today = new Date();
