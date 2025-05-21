@@ -1,0 +1,54 @@
+name: Deploy Pipeline Completo
+
+on:
+  push:
+    branches: [main, development, staging, production]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push
+        run: |
+          docker build -t ${{ steps.ecr.outputs.registry }}/mi-app:${{ github.sha }} .
+          docker push ${{ steps.ecr.outputs.registry }}/mi-app:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
+          aws-region: us-east-1
+
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --name tu-cluster-eks --region us-east-1
+
+      - name: Deploy Kubernetes Resources
+        run: |
+          # Reemplazar variables dinámicas
+          sed -i "s|\$ECR_REGISTRY|${{ steps.ecr.outputs.registry }}|g" k8s/deployment.yml
+          sed -i "s|\$GIT_SHA|${{ github.sha }}|g" k8s/deployment.yml
+
+          # Aplicar todos los recursos
+          kubectl apply -f k8s/configmap.yml
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+          kubectl apply -f k8s/ingress.yml
