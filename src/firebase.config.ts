@@ -16,7 +16,7 @@ export class FirebaseConfig {
                 this.logger.log('Initializing Firebase...');
 
                 const serviceAccountPath = path.resolve(
-                    process.env.FIREBASE_SERVICE_ACCOUNT_PATH as string
+                    process.env.FIREBASE_CONFIG_PATH as string
                 );
 
                 if (!fs.existsSync(serviceAccountPath)) {
