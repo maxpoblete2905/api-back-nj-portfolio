@@ -9,20 +9,34 @@ async function bootstrap() {
   try {
     logger.log('Starting application initialization...');
 
+    // Log environment variables (solo debug)
+    logger.debug('Environment variables:');
+    logger.debug(`FIREBASE_CONFIG_PATH: ${process.env.FIREBASE_CONFIG_PATH}`);
+    logger.debug(`PORT: ${process.env.PORT}`);
+    logger.debug(`SECRET: ${process.env.SECRET}`);
+    logger.debug(`MAIL_HOST: ${process.env.MAIL_HOST}`);
+    logger.debug(`MAIL_PORT: ${process.env.MAIL_PORT}`);
+    logger.debug(`MAIL_USER: ${process.env.MAIL_USER}`);
+    logger.debug(`MAIL_PASS: ${process.env.MAIL_PASS}`);
+
+    // Validación silenciosa (solo muestra error si falla)
+    const requiredEnvVars = ['FIREBASE_CONFIG_PATH', 'SECRET', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USER', 'MAIL_PASS'];
+    const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+
     // Create NestJS application
-    logger.debug('Creating NestJS application instance...');
     const app = await NestFactory.create(AppModule, {
       logger: ['log', 'error', 'warn', 'debug', 'verbose'],
     });
     logger.log('NestJS application instance created successfully');
 
     // Enable CORS
-    logger.debug('Enabling CORS...');
     app.enableCors();
-    logger.log('CORS enabled successfully');
+    logger.debug('CORS enabled');
 
     // Swagger configuration
-    logger.debug('Configuring Swagger documentation...');
     const config = new DocumentBuilder()
       .setTitle('API Documentation')
       .setDescription('The API description')
@@ -30,18 +44,16 @@ async function bootstrap() {
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
-    logger.log('Swagger documentation configured successfully');
+    logger.debug('Swagger documentation configured');
 
     // Start application
     const port = process.env.PORT ?? 8080;
-    logger.debug(`Attempting to start server on port ${port}...`);
     await app.listen(port);
 
     logger.log(`Application is running on: ${await app.getUrl()}`);
-    logger.debug(`Swagger documentation available at: ${await app.getUrl()}/api`);
-    logger.log('Application startup completed successfully');
+    logger.debug(`Swagger docs: ${await app.getUrl()}/api`);
   } catch (error) {
-    logger.error('Error during application startup', error.stack);
+    logger.error('Startup error', error.stack);
     process.exit(1);
   }
 }
