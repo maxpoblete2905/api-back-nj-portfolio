@@ -1,9 +1,14 @@
+# .github/workflows/deploy.yml
 name: Deploy Pipeline Completo
 
 on:
   push:
     branches: [main, development, staging, production]
   workflow_dispatch:
+
+env:
+  EKS_CLUSTER_NAME: tu-cluster-eks
+  AWS_REGION: us-east-1
 
 jobs:
   build:
@@ -12,10 +17,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         id: ecr
@@ -36,19 +41,37 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure kubectl
-        run: aws eks update-kubeconfig --name tu-cluster-eks --region us-east-1
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Deploy Kubernetes Resources
+        env:
+          FIREBASE_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          MAIL_USER: ${{ secrets.MAILTRAP_USER }}
+          MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
+          # Crear secret temporal con el JSON de Firebase
+          echo "$FIREBASE_JSON" > firebase.json
+          kubectl create secret generic app-secrets \
+            --from-literal=SECRET=${{ secrets.APP_SECRET }} \
+            --from-literal=MAIL_USER=$MAIL_USER \
+            --from-literal=MAIL_PASS=$MAIL_PASS \
+            --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
+            --dry-run=client -o yaml > k8s/secrets.yml
+          rm firebase.json
+
           # Reemplazar variables dinámicas
           sed -i "s|\$ECR_REGISTRY|${{ steps.ecr.outputs.registry }}|g" k8s/deployment.yml
           sed -i "s|\$GIT_SHA|${{ github.sha }}|g" k8s/deployment.yml
 
           # Aplicar todos los recursos
           kubectl apply -f k8s/configmap.yml
+          kubectl apply -f k8s/secrets.yml
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
           kubectl apply -f k8s/ingress.yml

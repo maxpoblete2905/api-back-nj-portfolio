@@ -1,10 +1,11 @@
+# k8s/configmap.yml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
 data:
-  PORT: '8080'
-  NODE_ENV: 'production'
-  MAIL_HOST: 'sandbox.smtp.mailtrap.io'
-  MAIL_PORT: '2525'
-  MAIL_FROM: 'Mi App <max.poblete2905@gmail.com>'
+  PORT: "8080"
+  NODE_ENV: "production"
+  MAIL_HOST: "sandbox.smtp.mailtrap.io"
+  MAIL_PORT: "2525"
+  MAIL_FROM: "Mi App <max.poblete2905@gmail.com>"
