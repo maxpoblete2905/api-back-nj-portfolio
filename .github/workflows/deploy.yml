@@ -65,15 +65,20 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           GIT_SHA: ${{ github.sha }}
-          FIREBASE_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_JSON: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Validación robusta del JSON de Firebase
-          if ! echo "$FIREBASE_JSON" | jq '.' > firebase.json; then
-            echo "❌ Error: El JSON de Firebase es inválido"
-            echo "Detalles del error:"
-            echo "$FIREBASE_JSON" | jq '.' 2>&1 || true
+          # Paso de debug (opcional)
+          echo "Longitud del JSON: ${#FIREBASE_JSON} caracteres"
+          echo "Primeros 100 caracteres: ${FIREBASE_JSON:0:100}"
+
+          # Validación mejorada
+          if ! echo "$FIREBASE_JSON" | jq -e '.' > firebase.json 2>/tmp/jq-error; then
+            echo "❌ Error: JSON inválido. Detalles:"
+            cat /tmp/jq-error
+            echo "--- Contenido recibido ---"
+            echo "$FIREBASE_JSON"
             exit 1
           fi
 
