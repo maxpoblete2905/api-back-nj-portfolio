@@ -11,6 +11,8 @@ env:
   ECR_REPOSITORY: api-back-nj-portfolio
   K8S_NAMESPACE: default
 
+  echo "🚀 Usando imagen: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
+
 jobs:
   build:
     runs-on: ubuntu-latest
