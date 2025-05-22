@@ -1,4 +1,3 @@
-# .github/workflows/deploy.yml
 name: Deploy Pipeline Completo
 
 on:
@@ -9,30 +8,34 @@ on:
 env:
   EKS_CLUSTER_NAME: cluster-test-integracion-continua
   AWS_REGION: us-east-2
+  ECR_REPOSITORY: api-back-nj-portfolio
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:  
+    permissions:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: us-east-2
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Build
 
       - name: Login to ECR
         id: ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          region: ${{ env.AWS_REGION }}
 
       - name: Build & Push
         run: |
-          docker build -t ${{ steps.ecr.outputs.registry }}/api-back-nj-portfolio:${{ github.sha }} .
-          docker push ${{ steps.ecr.outputs.registry }}/api-back-nj-portfolio:${{ github.sha }}
+          docker build -t ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
+          docker push ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
   deploy:
     needs: build
@@ -41,20 +44,21 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: us-east-2
+          aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-Deploy
 
       - name: Configure kubectl
         run: |
           aws eks update-kubeconfig \
             --name ${{ env.EKS_CLUSTER_NAME }} \
-            --region ${{ env.AWS_REGION }}
+            --region ${{ env.AWS_REGION }} \
+            --alias eks-cluster
 
       - name: Deploy Kubernetes Resources
         env:
@@ -62,21 +66,20 @@ jobs:
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Crear secret temporal con el JSON de Firebase
           echo "$FIREBASE_JSON" > firebase.json
+          
           kubectl create secret generic app-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
             --from-literal=MAIL_PASS=$MAIL_PASS \
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
-            --dry-run=client -o yaml > k8s/secrets.yml
+            --dry-run=client -o yaml | kubectl apply -f -
+          
           rm firebase.json
 
-          # Reemplazar variables dinámicas
           sed -i "s|\$ECR_REGISTRY|${{ steps.ecr.outputs.registry }}|g" k8s/deployment.yml
           sed -i "s|\$GIT_SHA|${{ github.sha }}|g" k8s/deployment.yml
 
-          # Aplicar todos los recursos
           kubectl apply -f k8s/configmap.yml
           kubectl apply -f k8s/secrets.yml
           kubectl apply -f k8s/deployment.yml
