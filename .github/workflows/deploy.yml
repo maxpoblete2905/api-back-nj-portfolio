@@ -11,8 +11,6 @@ env:
   ECR_REPOSITORY: api-back-nj-portfolio
   K8S_NAMESPACE: default
 
-  echo "🚀 Usando imagen: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -119,10 +117,14 @@ jobs:
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
             --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
+          # Log image path
+          echo "🚀 Imagen que se usará en el deployment: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
+
           # Apply manifests
           for manifest in k8s/configmap.yml k8s/deployment.yml k8s/service.yml k8s/ingress.yml; do
             kubectl apply -f $manifest --validate=false
           done
+
 
           # Verify deployment
           kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s || {
