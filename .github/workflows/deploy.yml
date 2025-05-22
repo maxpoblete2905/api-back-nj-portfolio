@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  EKS_CLUSTER_NAME: tu-cluster-eks
+  EKS_CLUSTER_NAME: cluster-test-integracion-continua
   AWS_REGION: us-east-2
 
 jobs:
