@@ -9,6 +9,8 @@ export class FirebaseConfig {
     private readonly logger = new Logger(FirebaseConfig.name);
 
     constructor() {
+        console.log('🔥 FIREBASE_CONFIG_PATH =', process.env.FIREBASE_CONFIG_PATH);
+
         try {
             if (!admin.apps.length) {
                 this.logger.log('Initializing Firebase...');
