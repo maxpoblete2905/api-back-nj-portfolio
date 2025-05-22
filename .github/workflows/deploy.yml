@@ -57,9 +57,15 @@ jobs:
 
       - name: Configure kubectl
         run: |
+          # Instalar kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+          
+          # Autenticación con EKS
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
 
       - name: Deploy Kubernetes Resources
         env:
