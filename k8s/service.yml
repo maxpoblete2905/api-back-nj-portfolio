@@ -1,8 +1,8 @@
-#sercice.yml
+# service.yml
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-back-nj-portfolio-service
+  name: api-back-service
   namespace: default
 spec:
   selector:

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: app-config
+  name: api-back-config
   namespace: default
 data:
   PORT: "8080"

@@ -1,8 +1,8 @@
-## deployment.yml
+# deployment.yml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-back-nj-portfolio
+  name: api-back-deployment
   namespace: default
 spec:
   replicas: 2
@@ -15,15 +15,15 @@ spec:
         app: api-back-nj-portfolio
     spec:
       containers:
-      - name: api-container
+      - name: api-back-container
         image: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA
         ports:
         - containerPort: 8080
         envFrom:
         - configMapRef:
-            name: app-config
+            name: api-back-config
         - secretRef:
-            name: app-secrets
+            name: api-back-secrets
         resources:
           requests:
             cpu: "100m"

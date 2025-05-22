@@ -67,7 +67,7 @@ jobs:
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
           echo "$FIREBASE_JSON" > firebase.json
-          kubectl create secret generic app-secrets \
+          kubectl create secret generic api-back-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
             --from-literal=MAIL_PASS=$MAIL_PASS \
@@ -80,5 +80,5 @@ jobs:
           kubectl apply -f k8s/service.yml
           kubectl apply -f k8s/ingress.yml
 
-          kubectl rollout status deployment/api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --timeout=180s
+          kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s
           kubectl get svc,ing -n ${{ env.K8S_NAMESPACE }}

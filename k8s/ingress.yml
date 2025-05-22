@@ -1,8 +1,8 @@
-# ingrass.yaml
+# ingress.yml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: api-back-nj-portfolio-ingress
+  name: api-back-ingress
   namespace: default
   annotations:
     kubernetes.io/ingress.class: alb
@@ -18,6 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: api-back-nj-portfolio-service
+            name: api-back-service
             port:
               number: 80
