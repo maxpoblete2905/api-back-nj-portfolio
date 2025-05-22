@@ -8,7 +8,7 @@ on:
 
 env:
   EKS_CLUSTER_NAME: tu-cluster-eks
-  AWS_REGION: us-east-1
+  AWS_REGION: us-east-2
 
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-2
 
       - name: Login to ECR
         id: ecr
@@ -44,7 +44,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-2
 
       - name: Configure kubectl
         run: |
