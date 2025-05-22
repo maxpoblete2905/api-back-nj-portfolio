@@ -65,22 +65,25 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           GIT_SHA: ${{ github.sha }}
-          FIREBASE_JSON: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
+          FIREBASE_BASE64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Paso de debug (opcional)
-          echo "Longitud del JSON: ${#FIREBASE_JSON} caracteres"
-          echo "Primeros 100 caracteres: ${FIREBASE_JSON:0:100}"
-
-          # Validación mejorada
-          if ! echo "$FIREBASE_JSON" | jq -e '.' > firebase.json 2>/tmp/jq-error; then
-            echo "❌ Error: JSON inválido. Detalles:"
+          # Decodificar Base64 a JSON
+          echo "Decodificando JSON de Firebase..."
+          echo "$FIREBASE_BASE64" | base64 --decode > firebase.json
+          
+          # Validación robusta
+          if ! jq -e '.' firebase.json > /dev/null 2>/tmp/jq-error; then
+            echo "❌ Error: JSON inválido después de decodificar Base64"
+            echo "Detalles del error:"
             cat /tmp/jq-error
-            echo "--- Contenido recibido ---"
-            echo "$FIREBASE_JSON"
+            echo "--- Primeras líneas del archivo ---"
+            head -n 3 firebase.json
             exit 1
           fi
+
+          echo "✅ JSON validado correctamente"
 
           # Verificar campos críticos del JSON
           REQUIRED_FIELDS=("type" "project_id" "private_key" "client_email")
