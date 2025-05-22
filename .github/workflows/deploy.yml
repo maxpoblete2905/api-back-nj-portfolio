@@ -28,8 +28,8 @@ jobs:
 
       - name: Build & Push
         run: |
-          docker build -t ${{ steps.ecr.outputs.registry }}/mi-app:${{ github.sha }} .
-          docker push ${{ steps.ecr.outputs.registry }}/mi-app:${{ github.sha }}
+          docker build -t ${{ steps.ecr.outputs.registry }}/api-back-nj-portfolio:${{ github.sha }} .
+          docker push ${{ steps.ecr.outputs.registry }}/api-back-nj-portfolio:${{ github.sha }}
 
   deploy:
     needs: build

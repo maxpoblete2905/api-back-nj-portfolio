@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mi-app
+  name: api-back-nj-portfolio
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: mi-app
+      app: api-back-nj-portfolio
   template:
     metadata:
       labels:
-        app: mi-app
+        app: api-back-nj-portfolio
     spec:
       containers:
-      - name: mi-app
-        image: $ECR_REGISTRY/mi-app:$GIT_SHA
+      - name: api-back-nj-portfolio
+        image: $ECR_REGISTRY/api-back-nj-portfolio:$GIT_SHA
         ports:
         - containerPort: 8080
         envFrom:
