@@ -10,7 +10,7 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
   rules:
-  - host: { ? { .Values.ingress.host } }
+  - host: {{ .Values.ingress.host }}
     http:
       paths:
       - path: /
