@@ -109,22 +109,21 @@ jobs:
             exit 1
           fi
 
-          # Create secret
-          kubectl create secret generic api-back-secrets \
-            --from-literal=SECRET=${{ secrets.APP_SECRET }} \
-            --from-literal=MAIL_USER=$MAIL_USER \
-            --from-literal=MAIL_PASS=$MAIL_PASS \
-            --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
-            --dry-run=client -o yaml | kubectl apply -f - --validate=false
+          # Parse Firebase JSON as escaped string
+          FIREBASE_JSON=$(jq -Rs . < firebase.json)
 
           # Log image path
           echo "🚀 Imagen que se usará en el deployment: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
 
-          # Apply manifests
-          for manifest in k8s/configmap.yml k8s/deployment.yml k8s/service.yml k8s/ingress.yml; do
-            kubectl apply -f $manifest --validate=false
-          done
-
+          # Deploy using Helm
+          helm upgrade --install api-back ./helm/api-back \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            --set image.repository=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }} \
+            --set image.tag=$GIT_SHA \
+            --set secret.SECRET="${{ secrets.APP_SECRET }}" \
+            --set secret.MAIL_USER="$MAIL_USER" \
+            --set secret.MAIL_PASS="$MAIL_PASS" \
+            --set secret.FIREBASE_SERVICE_ACCOUNT_JSON="$FIREBASE_JSON"
 
           # Verify deployment
           echo "📦 Verificando el rollout del deployment..."
@@ -144,7 +143,6 @@ jobs:
           else
             echo "✅ Deployment exitoso"
           fi
-
 
           # Cleanup
           shred -u firebase.json || rm -f firebase.json

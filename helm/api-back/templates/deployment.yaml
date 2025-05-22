@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-back-deployment
+  namespace: default
+spec:
+  replicas: { ? { .Values.replicaCount } }
+  selector:
+    matchLabels:
+      app: api-back-nj-portfolio
+  template:
+    metadata:
+      labels:
+        app: api-back-nj-portfolio
+    spec:
+      containers:
+      - name: api-back-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: { ? { .Values.image.pullPolicy } }
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: api-back-config
+        - secretRef:
+            name: api-back-secrets
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10

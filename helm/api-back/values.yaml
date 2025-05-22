@@ -1,0 +1,27 @@
+image:
+  repository: <placeholder> # sobreescribir en la CLI
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  PORT: "8080"
+  NODE_ENV: production
+  MAIL_HOST: sandbox.smtp.mailtrap.io
+  MAIL_PORT: "2525"
+  MAIL_FROM: "Mi App <max.poblete2905@gmail.com>"
+
+secret:
+  SECRET: ""
+  MAIL_USER: ""
+  MAIL_PASS: ""
+  FIREBASE_SERVICE_ACCOUNT_JSON: ""
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: api.tudominio.com
