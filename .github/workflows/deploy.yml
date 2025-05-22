@@ -27,16 +27,21 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-${{ github.run_id }}
-          audience: sts.amazonaws.com 
+          audience: sts.amazonaws.com
 
       - name: Login to Amazon ECR
-        id: ecr
+        id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, Tag, Push Docker Image
         run: |
-          docker build -t ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
-          docker push ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker build -t ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
+          docker push ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+      - name: Export ECR Registry
+        id: export-ecr
+        run: |
+          echo "registry=${{ steps.ecr-login.outputs.registry }}" >> $GITHUB_OUTPUT
 
   deploy:
     needs: build
@@ -53,62 +58,58 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: github-actions-${{ github.run_id }}  # ← Nueva línea
+          role-session-name: github-actions-${{ github.run_id }}
+          audience: sts.amazonaws.com
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
-      - name: Configure kubectl
+      - name: Install Tools
         run: |
-          # Verificar credenciales AWS (nuevo paso de diagnóstico)
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure EKS Access
+        run: |
           aws sts get-caller-identity
           
-          # Instalar kubectl
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-          
-          # Configurar EKS (con --role-arn explícito)
+          # Update kubeconfig with explicit role ARN
           aws eks update-kubeconfig \
             --name ${{ env.EKS_CLUSTER_NAME }} \
             --region ${{ env.AWS_REGION }} \
-            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}  # ← Asegura que usa el mismo rol
-
-          # Verificar conexión (nuevo paso)
+            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
+          
+          # Verify access
+          kubectl cluster-info
           kubectl get ns
+
+      - name: Get ECR Registry
+        id: get-ecr
+        run: |
+          echo "registry=$(aws ecr describe-registry --query 'registryId' --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
 
       - name: Deploy Kubernetes Resources
         env:
-          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ECR_REGISTRY: ${{ steps.get-ecr.outputs.registry }}
           GIT_SHA: ${{ github.sha }}
           FIREBASE_BASE64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Decodificar Base64 a JSON
-          echo "Decodificando JSON de Firebase..."
+          # Decode Firebase JSON
           echo "$FIREBASE_BASE64" | base64 --decode > firebase.json
           
-          # Validación robusta
+          # Validate JSON
           if ! jq -e '.' firebase.json > /dev/null 2>/tmp/jq-error; then
-            echo "❌ Error: JSON inválido después de decodificar Base64"
-            echo "Detalles del error:"
+            echo "❌ Invalid JSON after Base64 decode"
             cat /tmp/jq-error
-            echo "--- Primeras líneas del archivo ---"
             head -n 3 firebase.json
             exit 1
           fi
 
-          # Verificar campos críticos del JSON
-          REQUIRED_FIELDS=("type" "project_id" "private_key" "client_email")
-          for field in "${REQUIRED_FIELDS[@]}"; do
-            if ! jq -e ".${field}" firebase.json > /dev/null; then
-              echo "❌ Error: Campo requerido '${field}' no encontrado en el JSON"
-              exit 1
-            fi
-          done
-          echo "✅ JSON validado correctamente"
-
-          # Crear secret con validación
+          # Create secret
           kubectl create secret generic api-back-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
@@ -116,24 +117,17 @@ jobs:
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
             --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
-          # Aplicar manifiestos con reintentos
+          # Apply manifests
           for manifest in k8s/configmap.yml k8s/deployment.yml k8s/service.yml k8s/ingress.yml; do
-            echo "🔹 Aplicando $manifest..."
-            kubectl apply -f $manifest --validate=false || (echo "❌ Error aplicando $manifest"; exit 1)
+            kubectl apply -f $manifest --validate=false
           done
 
-          # Verificación del despliegue
-          echo "🔄 Verificando estado del despliegue..."
+          # Verify deployment
           kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s || {
-            echo "❌ Error en el despliegue"
             kubectl describe deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }}
             kubectl logs -l app=api-back -n ${{ env.K8S_NAMESPACE }} --tail=50
             exit 1
           }
 
-          # Mostrar información final
-          echo "✅ Despliegue completado con éxito"
-          kubectl get svc,ing,pods -n ${{ env.K8S_NAMESPACE }}
-
-          # Limpieza segura
+          # Cleanup
           shred -u firebase.json || rm -f firebase.json

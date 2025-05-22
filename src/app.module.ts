@@ -9,6 +9,7 @@ import { AcademicModule } from './modules/academic/academic.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { MailModule } from './mail/mail.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -26,5 +27,6 @@ import { MailModule } from './mail/mail.module';
     ContactsModule,
     MailModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule { }
