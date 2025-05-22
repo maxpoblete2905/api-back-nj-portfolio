@@ -52,6 +52,9 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Configure kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -62,30 +65,53 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
           GIT_SHA: ${{ github.sha }}
-          FIREBASE_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}  # 🔴 Nombre ORIGINAL conservado
+          FIREBASE_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Método robusto para escribir el JSON (evita problemas de formato)
-          echo "$FIREBASE_JSON" | jq '.' > firebase.json || (echo "❌ El JSON de Firebase es inválido"; exit 1)
-          
-          # Crear secret con validación desactivada
+          # Validación robusta del JSON de Firebase
+          if ! echo "$FIREBASE_JSON" | jq '.' > firebase.json; then
+            echo "❌ Error: El JSON de Firebase es inválido"
+            echo "Detalles del error:"
+            echo "$FIREBASE_JSON" | jq '.' 2>&1 || true
+            exit 1
+          fi
+
+          # Verificar campos críticos del JSON
+          REQUIRED_FIELDS=("type" "project_id" "private_key" "client_email")
+          for field in "${REQUIRED_FIELDS[@]}"; do
+            if ! jq -e ".${field}" firebase.json > /dev/null; then
+              echo "❌ Error: Campo requerido '${field}' no encontrado en el JSON"
+              exit 1
+            fi
+          done
+
+          # Crear secret con validación
           kubectl create secret generic api-back-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
             --from-literal=MAIL_PASS=$MAIL_PASS \
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
-            --dry-run=client -o yaml | kubectl apply -f - --validate=false  # ✅ Validación desactivada
+            --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
-          # Aplicar manifiestos
-          kubectl apply -f k8s/configmap.yml
-          kubectl apply -f k8s/deployment.yml
-          kubectl apply -f k8s/service.yml
-          kubectl apply -f k8s/ingress.yml --validate=false  # 🛡️ Importante para evitar validación OpenAPI
+          # Aplicar manifiestos con reintentos
+          for manifest in k8s/configmap.yml k8s/deployment.yml k8s/service.yml k8s/ingress.yml; do
+            echo "🔹 Aplicando $manifest..."
+            kubectl apply -f $manifest --validate=false || (echo "❌ Error aplicando $manifest"; exit 1)
+          done
 
-          # Verificar despliegue
-          kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s
-          kubectl get svc,ing -n ${{ env.K8S_NAMESPACE }}
+          # Verificación del despliegue
+          echo "🔄 Verificando estado del despliegue..."
+          kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s || {
+            echo "❌ Error en el despliegue"
+            kubectl describe deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }}
+            kubectl logs -l app=api-back -n ${{ env.K8S_NAMESPACE }} --tail=50
+            exit 1
+          }
 
-          # Limpieza
-          rm -f firebase.json
+          # Mostrar información final
+          echo "✅ Despliegue completado con éxito"
+          kubectl get svc,ing,pods -n ${{ env.K8S_NAMESPACE }}
+
+          # Limpieza segura
+          shred -u firebase.json || rm -f firebase.json
