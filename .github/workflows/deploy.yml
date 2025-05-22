@@ -51,21 +51,28 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions-${{ github.run_id }}  # ← Nueva línea
 
       - name: Install jq
         run: sudo apt-get install -y jq
 
       - name: Configure kubectl
         run: |
+          # Verificar credenciales AWS (nuevo paso de diagnóstico)
+          aws sts get-caller-identity
+          
           # Instalar kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
           
-          # Autenticación con EKS
+          # Configurar EKS (con --role-arn explícito)
           aws eks update-kubeconfig \
             --name ${{ env.EKS_CLUSTER_NAME }} \
             --region ${{ env.AWS_REGION }} \
-            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
+            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}  # ← Asegura que usa el mismo rol
+
+          # Verificar conexión (nuevo paso)
+          kubectl get ns
 
       - name: Deploy Kubernetes Resources
         env:
@@ -96,8 +103,8 @@ jobs:
               echo "❌ Error: Campo requerido '${field}' no encontrado en el JSON"
               exit 1
             fi
-          echo "✅ JSON validado correctamente"
           done
+          echo "✅ JSON validado correctamente"
 
           # Crear secret con validación
           kubectl create secret generic api-back-secrets \
