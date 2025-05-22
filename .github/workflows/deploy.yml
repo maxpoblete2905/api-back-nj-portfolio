@@ -9,6 +9,7 @@ env:
   EKS_CLUSTER_NAME: cluster-test-integracion-continua
   AWS_REGION: us-east-2
   ECR_REPOSITORY: api-back-nj-portfolio
+  K8S_NAMESPACE: default
 
 jobs:
   build:
@@ -58,7 +59,11 @@ jobs:
           aws eks update-kubeconfig \
             --name ${{ env.EKS_CLUSTER_NAME }} \
             --region ${{ env.AWS_REGION }} \
+            --role-arn ${{ secrets.AWS_ASSUME_ROLE }} \
             --alias eks-cluster
+          
+          # Verificación de conexión
+          kubectl cluster-info
 
       - name: Deploy Kubernetes Resources
         env:
@@ -68,20 +73,20 @@ jobs:
         run: |
           echo "$FIREBASE_JSON" > firebase.json
           
-          kubectl create secret generic app-secrets \
+          # Aplicación con validación desactivada y manejo de errores
+          if ! kubectl create secret generic app-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
             --from-literal=MAIL_PASS=$MAIL_PASS \
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
-            --dry-run=client -o yaml | kubectl apply -f -
+            --dry-run=client -o yaml | kubectl apply --validate=false -f -; then
+              echo "Error creating secrets"
+              exit 1
+          fi
           
-          rm firebase.json
+          rm -f firebase.json
 
-          sed -i "s|\$ECR_REGISTRY|${{ steps.ecr.outputs.registry }}|g" k8s/deployment.yml
-          sed -i "s|\$GIT_SHA|${{ github.sha }}|g" k8s/deployment.yml
-
-          kubectl apply -f k8s/configmap.yml
-          kubectl apply -f k8s/secrets.yml
-          kubectl apply -f k8s/deployment.yml
-          kubectl apply -f k8s/service.yml
-          kubectl apply -f k8s/ingress.yml
+          # Aplicación de los demás recursos
+          for file in k8s/{configmap,secrets,deployment,service,ingress}.yml; do
+            kubectl apply -f $file --validate=false || exit 1
+          done
