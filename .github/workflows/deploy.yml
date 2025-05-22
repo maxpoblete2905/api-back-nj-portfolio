@@ -26,18 +26,14 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-Build
 
       - name: Login to Amazon ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, Tag, and Push Docker Image
+      - name: Build, Tag, Push Docker Image
         run: |
-          docker build \
-            -t ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} \
-            --build-arg ENVIRONMENT=prod \
-            .
+          docker build -t ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
           docker push ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
   deploy:
@@ -55,18 +51,12 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-Deploy
 
-      - name: Set Up Kubectl
+      - name: Configure kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-          
-          aws eks update-kubeconfig \
-            --name ${{ env.EKS_CLUSTER_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
       - name: Deploy Kubernetes Resources
         env:
@@ -76,7 +66,6 @@ jobs:
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Create secrets
           echo "$FIREBASE_JSON" > firebase.json
           kubectl create secret generic app-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
@@ -86,12 +75,10 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
           rm -f firebase.json
 
-          # Apply manifests
           kubectl apply -f k8s/configmap.yml
           kubectl apply -f k8s/deployment.yml
           kubectl apply -f k8s/service.yml
           kubectl apply -f k8s/ingress.yml
 
-          # Verify deployment
-          kubectl rollout status deployment/api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          kubectl rollout status deployment/api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --timeout=180s
           kubectl get svc,ing -n ${{ env.K8S_NAMESPACE }}
