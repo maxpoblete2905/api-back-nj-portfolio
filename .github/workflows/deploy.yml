@@ -27,23 +27,17 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-Build
-          role-duration-seconds: 3600
 
       - name: Login to Amazon ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
-        with:
-          region: ${{ env.AWS_REGION }}
 
       - name: Build, Tag, and Push Docker Image
         run: |
-          # Build Docker image with cache
           docker build \
             -t ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} \
             --build-arg ENVIRONMENT=prod \
             .
-          
-          # Push to ECR
           docker push ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
   deploy:
@@ -62,63 +56,42 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ASSUME_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-Deploy
-          role-duration-seconds: 3600
 
-      - name: Set Up Kubectl Authentication
+      - name: Set Up Kubectl
         run: |
-          # Clean previous configurations
-          rm -rf ~/.kube/config
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
           
-          # Configure kubeconfig with retry logic
-          max_retries=3
-          attempt=0
-          until [ $attempt -ge $max_retries ]
-          do
-            aws eks update-kubeconfig \
-              --name ${{ env.EKS_CLUSTER_NAME }} \
-              --region ${{ env.AWS_REGION }} \
-              --role-arn ${{ secrets.AWS_ASSUME_ROLE }} \
-              --alias eks-cluster \
-              --no-include-email && break
-            attempt=$((attempt+1))
-            sleep 5
-          done
-          
-          # Verify connectivity
-          kubectl config view
-          kubectl cluster-info
-          kubectl get ns --request-timeout=10s
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
 
       - name: Deploy Kubernetes Resources
         env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          GIT_SHA: ${{ github.sha }}
           FIREBASE_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           MAIL_USER: ${{ secrets.MAILTRAP_USER }}
           MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          set -e  # Exit immediately if any command fails
-          
-          # Create temporary secret file
+          # Create secrets
           echo "$FIREBASE_JSON" > firebase.json
-          
-          # Apply secrets with validation disabled
           kubectl create secret generic app-secrets \
             --from-literal=SECRET=${{ secrets.APP_SECRET }} \
             --from-literal=MAIL_USER=$MAIL_USER \
             --from-literal=MAIL_PASS=$MAIL_PASS \
             --from-file=FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json \
-            --dry-run=client -o yaml | kubectl apply --validate=false -f -
-          
-          # Clean up
+            --dry-run=client -o yaml | kubectl apply -f -
           rm -f firebase.json
 
-          # Apply all Kubernetes manifests
-          for manifest in k8s/{configmap,deployment,service,ingress}.yml; do
-            echo "Applying $manifest..."
-            kubectl apply -f $manifest --validate=false
-          done
+          # Apply manifests
+          kubectl apply -f k8s/configmap.yml
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
+          kubectl apply -f k8s/ingress.yml
 
-          # Verify deployment status
-          kubectl rollout status deployment/api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --timeout=90s
-          
-          # Get service info
-          kubectl get svc -n ${{ env.K8S_NAMESPACE }}
+          # Verify deployment
+          kubectl rollout status deployment/api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --timeout=120s
+          kubectl get svc,ing -n ${{ env.K8S_NAMESPACE }}
