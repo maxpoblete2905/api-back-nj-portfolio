@@ -127,11 +127,24 @@ jobs:
 
 
           # Verify deployment
-          kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s || {
-            kubectl describe deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }}
-            kubectl logs -l app=api-back -n ${{ env.K8S_NAMESPACE }} --tail=50
+          echo "📦 Verificando el rollout del deployment..."
+          if ! kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s; then
+            echo "❌ El rollout falló. Obteniendo más detalles..."
+
+            echo "🔍 Lista de pods:"
+            kubectl get pods -n ${{ env.K8S_NAMESPACE }}
+
+            echo "🔍 Descripción de los pods:"
+            kubectl describe pods -l app=api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }}
+
+            echo "🧾 Últimos logs de los pods:"
+            kubectl logs -l app=api-back-nj-portfolio -n ${{ env.K8S_NAMESPACE }} --tail=100
+
             exit 1
-          }
+          else
+            echo "✅ Deployment exitoso"
+          fi
+
 
           # Cleanup
           shred -u firebase.json || rm -f firebase.json
