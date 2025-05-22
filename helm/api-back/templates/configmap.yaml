@@ -4,8 +4,8 @@ metadata:
   name: api-back-config
   namespace: default
 data:
-  PORT: { ? { .Values.env.PORT | quote } }
-  NODE_ENV: { ? { .Values.env.NODE_ENV | quote } }
-  MAIL_HOST: { ? { .Values.env.MAIL_HOST | quote } }
-  MAIL_PORT: { ? { .Values.env.MAIL_PORT | quote } }
-  MAIL_FROM: { ? { .Values.env.MAIL_FROM | quote } }
+  PORT: "{{ .Values.env.PORT | quote }}"
+  NODE_ENV: "{{ .Values.env.NODE_ENV | quote }}"
+  MAIL_HOST: "{{ .Values.env.MAIL_HOST | quote }}"
+  MAIL_PORT: "{{ .Values.env.MAIL_PORT | quote }}"
+  MAIL_FROM: "{{ .Values.env.MAIL_FROM | quote }}"
