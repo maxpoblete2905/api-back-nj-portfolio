@@ -74,14 +74,10 @@ jobs:
       - name: Configure EKS Access
         run: |
           aws sts get-caller-identity
-          
-          # Update kubeconfig with explicit role ARN
           aws eks update-kubeconfig \
             --name ${{ env.EKS_CLUSTER_NAME }} \
             --region ${{ env.AWS_REGION }} \
             --role-arn ${{ secrets.AWS_ASSUME_ROLE }}
-          
-          # Verify access
           kubectl cluster-info
           kubectl get ns
 
@@ -91,18 +87,11 @@ jobs:
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
           echo "registry=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
 
-      - name: Deploy Kubernetes Resources
+      - name: Decode Firebase JSON
         env:
-          ECR_REGISTRY: ${{ steps.get-ecr.outputs.registry }}
-          GIT_SHA: ${{ github.sha }}
           FIREBASE_BASE64: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
-          MAIL_USER: ${{ secrets.MAILTRAP_USER }}
-          MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
         run: |
-          # Decode Firebase JSON
           echo "$FIREBASE_BASE64" | base64 --decode > firebase.json
-          
-          # Validate JSON
           if ! jq -e '.' firebase.json > /dev/null 2>/tmp/jq-error; then
             echo "❌ Invalid JSON after Base64 decode"
             cat /tmp/jq-error
@@ -110,20 +99,31 @@ jobs:
             exit 1
           fi
 
-          # Log image path
+      - name: Create Kubernetes Secret for Firebase
+        run: |
+          kubectl create secret generic firebase-secret \
+            --from-file=firebase.json=firebase.json \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Kubernetes Resources
+        env:
+          ECR_REGISTRY: ${{ steps.get-ecr.outputs.registry }}
+          GIT_SHA: ${{ github.sha }}
+          MAIL_USER: ${{ secrets.MAILTRAP_USER }}
+          MAIL_PASS: ${{ secrets.MAILTRAP_PASS }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+        run: |
           echo "🚀 Imagen que se usará en el deployment: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
 
-          # Deploy using Helm
           helm upgrade --install api-back ./helm/api-back \
             --namespace ${{ env.K8S_NAMESPACE }} \
             --set image.repository=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }} \
             --set image.tag=$GIT_SHA \
-            --set secret.SECRET="${{ secrets.APP_SECRET }}" \
+            --set secret.SECRET="$APP_SECRET" \
             --set secret.MAIL_USER="$MAIL_USER" \
-            --set secret.MAIL_PASS="$MAIL_PASS" \
-            --set-file secret.FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json
+            --set secret.MAIL_PASS="$MAIL_PASS"
 
-          # Verify deployment
           echo "📦 Verificando el rollout del deployment..."
           if ! kubectl rollout status deployment/api-back-deployment -n ${{ env.K8S_NAMESPACE }} --timeout=180s; then
             echo "❌ El rollout falló. Obteniendo más detalles..."
@@ -142,5 +142,4 @@ jobs:
             echo "✅ Deployment exitoso"
           fi
 
-          # Cleanup
           shred -u firebase.json || rm -f firebase.json

@@ -24,6 +24,13 @@ spec:
                 name: api-back-config
             - secretRef:
                 name: api-back-secrets
+          env:
+            - name: FIREBASE_CONFIG_PATH
+              value: "/etc/firebase/firebase.json"
+          volumeMounts:
+            - name: firebase-secret
+              mountPath: /etc/firebase
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
@@ -37,3 +44,7 @@ spec:
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 10
+      volumes:
+        - name: firebase-secret
+          secret:
+            secretName: firebase-secret
