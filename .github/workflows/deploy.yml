@@ -85,10 +85,11 @@ jobs:
           kubectl cluster-info
           kubectl get ns
 
-      - name: Get ECR Registry
+      - name: Set ECR Registry
         id: get-ecr
         run: |
-          echo "registry=$(aws ecr describe-registry --query 'registryId' --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+          echo "registry=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
 
       - name: Deploy Kubernetes Resources
         env:
