@@ -109,9 +109,6 @@ jobs:
             exit 1
           fi
 
-          # Parse Firebase JSON as escaped string
-          FIREBASE_JSON=$(jq -Rs . < firebase.json)
-
           # Log image path
           echo "🚀 Imagen que se usará en el deployment: $ECR_REGISTRY/$ECR_REPOSITORY:$GIT_SHA"
 
@@ -123,7 +120,7 @@ jobs:
             --set secret.SECRET="${{ secrets.APP_SECRET }}" \
             --set secret.MAIL_USER="$MAIL_USER" \
             --set secret.MAIL_PASS="$MAIL_PASS" \
-            --set secret.FIREBASE_SERVICE_ACCOUNT_JSON="$FIREBASE_JSON"
+            --set-file secret.FIREBASE_SERVICE_ACCOUNT_JSON=firebase.json
 
           # Verify deployment
           echo "📦 Verificando el rollout del deployment..."
