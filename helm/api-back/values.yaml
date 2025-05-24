@@ -24,4 +24,4 @@ service:
 
 ingress:
   enabled: true
-  host: api.tudominio.com
+  host: api.maxpoblete.com
