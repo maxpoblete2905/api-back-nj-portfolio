@@ -2,7 +2,8 @@ name: Deploy Pipeline Completo
 
 on:
   push:
-    branches: [main, development, staging, production]
+    #branches: [main, development, staging, production]
+    branches: [development, staging, production]
   workflow_dispatch:
 
 env:
