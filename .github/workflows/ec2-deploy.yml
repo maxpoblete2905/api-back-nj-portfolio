@@ -1,9 +1,8 @@
-# .github/workflows/deploy.yml
 name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]  # Cambia si usas otra rama principal
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -13,21 +12,20 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Guardar clave privada en archivo
+      - name: Crear archivo key.pem desde secret base64
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > key.pem
           chmod 600 key.pem
 
-      - name: Iniciar agente SSH y añadir clave
+      - name: Agregar host a known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Agregar key al agente SSH y ejecutar despliegue
         run: |
           eval "$(ssh-agent -s)"
           ssh-add key.pem
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_HOST }}" > host.txt
-          ssh-keyscan -H -f host.txt >> ~/.ssh/known_hosts
-
-      - name: Desplegar en EC2
-        run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd ~/api-back-nj-portfolio
             git pull origin main
