@@ -3,7 +3,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]  # o la rama que uses para producción
+    branches: [ main ]  # Cambia si usas otra rama principal
 
 jobs:
   deploy:
@@ -13,9 +13,9 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Decodificar clave SSH (Base64 → PEM)
+      - name: Guardar clave privada en archivo
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
       - name: Iniciar agente SSH y añadir clave
@@ -23,11 +23,12 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add key.pem
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.EC2_HOST }}" > host.txt
+          ssh-keyscan -H -f host.txt >> ~/.ssh/known_hosts
 
       - name: Desplegar en EC2
         run: |
-          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd ~/api-back-nj-portfolio
             git pull origin main
             npm install
