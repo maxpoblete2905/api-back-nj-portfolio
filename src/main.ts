@@ -13,10 +13,6 @@ async function bootstrap() {
     cert: fs.readFileSync('cert/cert.pem'),
   };
 
-  const app = await NestFactory.create(AppModule, {
-    httpsOptions,
-  });
-
   try {
     logger.log('Starting application initialization...');
 
@@ -39,8 +35,10 @@ async function bootstrap() {
 
     // Create NestJS application
     const app = await NestFactory.create(AppModule, {
+      httpsOptions,
       logger: ['log', 'error', 'warn', 'debug', 'verbose'],
     });
+
     logger.log('NestJS application instance created successfully');
 
     // Enable CORS
