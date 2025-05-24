@@ -3,10 +3,19 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   config();
+  const httpsOptions = {
+    key: fs.readFileSync('cert/key.pem'),
+    cert: fs.readFileSync('cert/cert.pem'),
+  };
+
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions,
+  });
 
   try {
     logger.log('Starting application initialization...');
