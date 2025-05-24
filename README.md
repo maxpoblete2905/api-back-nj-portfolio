@@ -1,98 +1,86 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚀 Guía de Despliegue API NestJS en EC2 con GitHub Actions
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+---
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🧷 Configuración Inicial de la Instancia EC2
 
-## Description
+| Acción                          | Comando                                                            | Ejemplo                                                  |
+|--------------------------------|--------------------------------------------------------------------|----------------------------------------------------------|
+| Conectarse a la instancia       | `ssh -i "<clave>.pem" ubuntu@<IP>`                                | `ssh -i "deploy.pem" ubuntu@3.22.44.11`                 |
+| Actualizar paquetes del sistema| `sudo apt update && sudo apt upgrade -y`                           | `sudo apt update && sudo apt upgrade -y`                |
+| Instalar Node.js y npm         | `curl -fsSL https://deb.nodesource.com/setup_lts.x \| sudo -E bash -`<br>`sudo apt install -y nodejs` | `sudo apt install -y nodejs`                            |
+| Instalar PM2                   | `sudo npm install -g pm2`                                          | `sudo npm install -g pm2`                               |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🧪 Clonar y Ejecutar la Aplicación
 
-```bash
-$ npm install
-```
+| Acción                  | Comando                                                  | Ejemplo                                                   |
+|------------------------|----------------------------------------------------------|-----------------------------------------------------------|
+| Clonar repositorio     | `git clone <url>`                                        | `git clone git@github.com:maxpoblete/api-back-nj-portfolio.git` |
+| Entrar al proyecto     | `cd <carpeta>`                                           | `cd api-back-nj-portfolio`                                |
+| Instalar dependencias  | `npm install`                                            | `npm install`                                             |
+| Compilar el proyecto   | `npm run build`                                          | `npm run build`                                           |
+| Ejecutar con PM2       | `pm2 start dist/main.js --name <nombre>`                | `pm2 start dist/main.js --name api-nestjs`               |
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🔑 Configuración de SSH para GitHub Actions
 
-# watch mode
-$ npm run start:dev
+| Acción                         | Comando                                                            | Ejemplo                                                    |
+|--------------------------------|--------------------------------------------------------------------|------------------------------------------------------------|
+| Generar clave SSH              | `ssh-keygen -t rsa -b 4096 -C "ec2-deploy" -f ec2-deploy-key`     | `ssh-keygen -t rsa -b 4096 -C "ec2-deploy" -f ec2-deploy-key` |
+| Codificar clave privada en base64 | `base64 -w 0 ec2-deploy-key`                                   | `base64 -w 0 ec2-deploy-key`                              |
 
-# production mode
-$ npm run start:prod
-```
+> Luego agrega el resultado como secreto en GitHub: `EC2_SSH_KEY`
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## 🎯 Secrets Requeridos en GitHub
 
-# e2e tests
-$ npm run test:e2e
+| Nombre del Secret  | Descripción                                  |
+|--------------------|----------------------------------------------|
+| `EC2_SSH_KEY`      | Clave privada codificada en base64           |
+| `EC2_HOST`         | Dirección IP o DNS público de la instancia   |
 
-# test coverage
-$ npm run test:cov
-```
+---
 
-## Deployment
+## ⚙️ Workflow de GitHub Actions para Despliegue
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```yaml
+name: Deploy to EC2
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
 
-## Resources
+      - name: Crear archivo key.pem desde secret base64
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > key.pem
+          chmod 600 key.pem
 
-Check out a few resources that may come in handy when working with NestJS:
+      - name: Agregar host a known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+      - name: Agregar key al agente SSH y ejecutar despliegue
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add key.pem
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/api-back-nj-portfolio
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart api-nestjs || pm2 start dist/main.js --name api-nestjs
+          EOF
