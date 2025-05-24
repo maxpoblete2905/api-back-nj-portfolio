@@ -2,9 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
+import { config } from 'dotenv';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  config();
 
   try {
     logger.log('Starting application initialization...');
