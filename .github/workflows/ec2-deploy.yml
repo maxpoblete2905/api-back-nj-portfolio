@@ -13,14 +13,21 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar acceso SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+      - name: Decodificar clave SSH (Base64 → PEM)
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > key.pem
+          chmod 600 key.pem
+
+      - name: Iniciar agente SSH y añadir clave
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add key.pem
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Desplegar en EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd ~/api-back-nj-portfolio
             git pull origin main
             npm install
