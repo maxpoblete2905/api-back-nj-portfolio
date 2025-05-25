@@ -23,6 +23,14 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Crear archivo firebase.json desde secret base64
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > firebase.json
+
+      - name: Transferir archivo firebase.json al servidor EC2
+        run: |
+          scp -i key.pem firebase.json ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/api-back-nj-portfolio/firebase.json
+
       - name: Agregar key al agente SSH y ejecutar despliegue
         run: |
           eval "$(ssh-agent -s)"
@@ -33,4 +41,5 @@ jobs:
             npm install
             npm run build
             pm2 restart api-nestjs || pm2 start dist/main.js --name api-nestjs
+            rm -f firebase.json
           EOF

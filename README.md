@@ -17,6 +17,7 @@
 
 | Acción                  | Comando                                                  | Ejemplo                                                   |
 |------------------------|----------------------------------------------------------|-----------------------------------------------------------|
+| Instalar git           | `sudo apt install git -y`                                | `sudo apt install git -y` |
 | Clonar repositorio     | `git clone <url>`                                        | `git clone git@github.com:maxpoblete/api-back-nj-portfolio.git` |
 | Entrar al proyecto     | `cd <carpeta>`                                           | `cd api-back-nj-portfolio`                                |
 | Instalar dependencias  | `npm install`                                            | `npm install`                                             |
