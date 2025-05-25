@@ -41,5 +41,4 @@ jobs:
             npm install
             npm run build
             pm2 restart api-nestjs || pm2 start dist/main.js --name api-nestjs
-            rm -f firebase.json
           EOF
