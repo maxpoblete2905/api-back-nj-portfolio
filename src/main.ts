@@ -5,26 +5,37 @@ import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
 import * as fs from 'fs';
 
+interface HttpsOptions {
+  key: Buffer;
+  cert: Buffer;
+}
+
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
   config();
-  const httpsOptions = {
-    key: fs.readFileSync('cert/key.pem'),
-    cert: fs.readFileSync('cert/cert.pem'),
-  };
+  let httpsOptions: HttpsOptions | undefined;
+  const logger = new Logger('Bootstrap');
+
+  if (process.env.NODE_ENV !== 'localhost') {
+    httpsOptions = {
+      key: fs.readFileSync('cert/key.pem'),
+      cert: fs.readFileSync('cert/cert.pem'),
+    };
+  } else {
+    logger.log('No Necisita Certificados ssl');
+  }
 
   try {
     logger.log('Starting application initialization...');
-
-    // Log environment variables (solo debug)
     logger.debug('Environment variables:');
     logger.debug(`FIREBASE_CONFIG_PATH: ${process.env.FIREBASE_CONFIG_PATH}`);
     logger.debug(`PORT: ${process.env.PORT}`);
+    logger.debug(`NODE_ENV: ${process.env.NODE_ENV}`);
     logger.debug(`SECRET: ${process.env.SECRET}`);
     logger.debug(`MAIL_HOST: ${process.env.MAIL_HOST}`);
     logger.debug(`MAIL_PORT: ${process.env.MAIL_PORT}`);
     logger.debug(`MAIL_USER: ${process.env.MAIL_USER}`);
     logger.debug(`MAIL_PASS: ${process.env.MAIL_PASS}`);
+
 
     // Validación silenciosa (solo muestra error si falla)
     const requiredEnvVars = ['FIREBASE_CONFIG_PATH', 'SECRET', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USER', 'MAIL_PASS'];
@@ -56,7 +67,7 @@ async function bootstrap() {
     logger.debug('Swagger documentation configured');
 
     // Start application
-    const port = process.env.PORT ?? 8080;
+    const port = process.env.PORT ?? 80;
     await app.listen(port);
 
     logger.log(`Application is running on: ${await app.getUrl()}`);
