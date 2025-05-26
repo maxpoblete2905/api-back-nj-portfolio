@@ -51,7 +51,7 @@ jobs:
           FIREBASE_CONFIG_PATH=/home/ubuntu/api-back-nj-portfolio/firebase.json
           PORT=8080
           SECRET=${{ secrets.SECRET }}
-          NODE_ENV=localhost
+          NODE_ENV=dev
           EOL
 
             echo "Contenido de .env generado:"
