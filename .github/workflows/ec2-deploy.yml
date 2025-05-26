@@ -27,6 +27,15 @@ jobs:
         run: |
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" | base64 -d > firebase.json
 
+      - name: Mostrar valores de secrets (solo para debug, NO sensibles)
+        run: |
+          echo "NODE_ENV=localhost"
+          echo "MAIL_USER=${{ secrets.MAIL_USER }}"
+          echo "MAIL_PORT=${{ secrets.MAIL_PORT }}"
+          echo "MAIL_HOST=${{ secrets.MAIL_HOST }}"
+          echo "APP_SECRET is set: ${{ secrets.APP_SECRET != '' }}"
+          echo "MAIL_PASS is set: ${{ secrets.MAIL_PASS != '' }}"
+
       - name: Transferir archivo firebase.json al servidor EC2
         run: |
           scp -i key.pem firebase.json ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/api-back-nj-portfolio/firebase.json
@@ -35,24 +44,36 @@ jobs:
         run: |
           eval "$(ssh-agent -s)"
           ssh-add key.pem
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
+
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             cd ~/api-back-nj-portfolio
 
-            # Crear archivo .env con variables de entorno desde secrets
-            cat > .env <<EOL
-            FIREBASE_CONFIG_PATH=/home/ubuntu/api-back-nj-portfolio/firebase.json
-            PORT=8080
-            SECRET=${{ secrets.APP_SECRET }}
-            NODE_ENV=localhost
-            MAIL_HOST=${{ secrets.MAIL_HOST }}
-            MAIL_PORT=${{ secrets.MAIL_PORT }}
-            MAIL_USER=${{ secrets.MAIL_USER }}
-            MAIL_PASS=${{ secrets.MAIL_PASS }}
-            EOL
+            echo "Creando archivo .env remoto..."
 
+            # Crear archivo .env
+            cat > .env <<'EOL'
+          FIREBASE_CONFIG_PATH=/home/ubuntu/api-back-nj-portfolio/firebase.json
+          PORT=8080
+          SECRET=${{ secrets.APP_SECRET }}
+          NODE_ENV=localhost
+          MAIL_HOST=${{ secrets.MAIL_HOST }}
+          MAIL_PORT=${{ secrets.MAIL_PORT }}
+          MAIL_USER=${{ secrets.MAIL_USER }}
+          MAIL_PASS=${{ secrets.MAIL_PASS }}
+          EOL
+
+            echo "Contenido de .env generado:"
+            cat .env
+
+            echo "Pull del repositorio..."
             git pull origin main
+
+            echo "Instalando dependencias..."
             npm install
+
+            echo "Compilando proyecto..."
             npm run build
 
+            echo "Reiniciando aplicación con PM2..."
             pm2 restart api-nestjs --update-env || pm2 start dist/main.js --name api-nestjs --update-env
           EOF
