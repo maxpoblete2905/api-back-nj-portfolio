@@ -67,7 +67,7 @@ async function bootstrap() {
     logger.debug('Swagger documentation configured');
 
     // Start application
-    const port = process.env.PORT ?? 80;
+    const port = process.env.PORT ?? 8080;
     await app.listen(port);
 
     logger.log(`Application is running on: ${await app.getUrl()}`);

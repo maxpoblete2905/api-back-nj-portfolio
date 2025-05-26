@@ -6,7 +6,7 @@
 
 | Acción                          | Comando                                                            | Ejemplo                                                  |
 |--------------------------------|--------------------------------------------------------------------|----------------------------------------------------------|
-| Conectarse a la instancia       | `ssh -i "<clave>.pem" ubuntu@<IP>`                                | `ssh -i "deploy.pem" ubuntu@3.22.44.11`                 |
+| Conectarse a la instancia       | `ssh -i "<clave>.pem" ubuntu@<IP>`                                | `ssh -i "C:\Users\maxca\OneDrive\Escritorio\PORTAFOLIO\key-pair-max-poblete.pem" ubuntu@13.220.114.179`                 |
 | Actualizar paquetes del sistema| `sudo apt update && sudo apt upgrade -y`                           | `sudo apt update && sudo apt upgrade -y`                |
 | Instalar Node.js y npm         | `curl -fsSL https://deb.nodesource.com/setup_lts.x \| sudo -E bash -`<br>`sudo apt install -y nodejs` | `sudo apt install -y nodejs`                            |
 | Instalar PM2                   | `sudo npm install -g pm2`                                          | `sudo npm install -g pm2`                               |
