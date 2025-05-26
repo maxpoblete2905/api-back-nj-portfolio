@@ -31,7 +31,6 @@ jobs:
         run: |
           echo "NODE_ENV=localhost"
           echo "APP_SECRET is set: ${{ secrets.SECRET != '' }}"
-          echo "MAIL_PASS is set: ${{ secrets.MAIL_PASS != '' }}"
 
       - name: Transferir archivo firebase.json al servidor EC2
         run: |
