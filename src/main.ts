@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
 import * as fs from 'fs';
+import * as path from 'path';
 
 interface HttpsOptions {
   key: Buffer;
@@ -17,8 +18,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'localhost') {
     httpsOptions = {
-      key: fs.readFileSync('cert/key.pem'),
-      cert: fs.readFileSync('cert/cert.pem'),
+      key: fs.readFileSync(path.join(__dirname, '..', 'cert', 'key.pem')),
+      cert: fs.readFileSync(path.join(__dirname, '..', 'cert', 'cert.pem')),
     };
   } else {
     logger.log('No Necisita Certificados ssl');
