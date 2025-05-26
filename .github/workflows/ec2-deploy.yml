@@ -33,7 +33,7 @@ jobs:
           echo "MAIL_USER=${{ secrets.MAIL_USER }}"
           echo "MAIL_PORT=${{ secrets.MAIL_PORT }}"
           echo "MAIL_HOST=${{ secrets.MAIL_HOST }}"
-          echo "APP_SECRET is set: ${{ secrets.APP_SECRET != '' }}"
+          echo "APP_SECRET is set: ${{ secrets.SECRET != '' }}"
           echo "MAIL_PASS is set: ${{ secrets.MAIL_PASS != '' }}"
 
       - name: Transferir archivo firebase.json al servidor EC2
@@ -54,7 +54,7 @@ jobs:
             cat > .env <<'EOL'
           FIREBASE_CONFIG_PATH=/home/ubuntu/api-back-nj-portfolio/firebase.json
           PORT=8080
-          SECRET=${{ secrets.APP_SECRET }}
+          SECRET=${{ secrets.SECRET }}
           NODE_ENV=localhost
           MAIL_HOST=${{ secrets.MAIL_HOST }}
           MAIL_PORT=${{ secrets.MAIL_PORT }}
