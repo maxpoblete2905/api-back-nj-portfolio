@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -35,10 +35,24 @@ jobs:
         run: |
           eval "$(ssh-agent -s)"
           ssh-add key.pem
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << EOF
             cd ~/api-back-nj-portfolio
+
+            # Crear archivo .env con variables de entorno desde secrets
+            cat > .env <<EOL
+            FIREBASE_CONFIG_PATH=/home/ubuntu/api-back-nj-portfolio/firebase.json
+            PORT=8080
+            SECRET=${{ secrets.APP_SECRET }}
+            NODE_ENV=localhost
+            MAIL_HOST=${{ secrets.MAIL_HOST }}
+            MAIL_PORT=${{ secrets.MAIL_PORT }}
+            MAIL_USER=${{ secrets.MAIL_USER }}
+            MAIL_PASS=${{ secrets.MAIL_PASS }}
+            EOL
+
             git pull origin main
             npm install
             npm run build
-            pm2 restart api-nestjs || pm2 start dist/main.js --name api-nestjs
+
+            pm2 restart api-nestjs --update-env || pm2 start dist/main.js --name api-nestjs --update-env
           EOF
