@@ -30,7 +30,7 @@ jobs:
       - name: Mostrar valores de secrets (solo para debug, NO sensibles)
         run: |
           echo "NODE_ENV=localhost"
-          echo "APP_SECRET is set: ${{ secrets.SECRET != '' }}"
+          echo "SECRET is set: ${{ secrets.SECRET != '' }}"
 
       - name: Transferir archivo firebase.json al servidor EC2
         run: |
