@@ -30,9 +30,6 @@ jobs:
       - name: Mostrar valores de secrets (solo para debug, NO sensibles)
         run: |
           echo "NODE_ENV=localhost"
-          echo "MAIL_USER=${{ secrets.MAIL_USER }}"
-          echo "MAIL_PORT=${{ secrets.MAIL_PORT }}"
-          echo "MAIL_HOST=${{ secrets.MAIL_HOST }}"
           echo "APP_SECRET is set: ${{ secrets.SECRET != '' }}"
           echo "MAIL_PASS is set: ${{ secrets.MAIL_PASS != '' }}"
 
@@ -56,10 +53,6 @@ jobs:
           PORT=8080
           SECRET=${{ secrets.SECRET }}
           NODE_ENV=localhost
-          MAIL_HOST=${{ secrets.MAIL_HOST }}
-          MAIL_PORT=${{ secrets.MAIL_PORT }}
-          MAIL_USER=${{ secrets.MAIL_USER }}
-          MAIL_PASS=${{ secrets.MAIL_PASS }}
           EOL
 
             echo "Contenido de .env generado:"

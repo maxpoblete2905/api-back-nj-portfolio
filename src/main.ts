@@ -31,14 +31,10 @@ async function bootstrap() {
     logger.debug(`PORT: ${process.env.PORT}`);
     logger.debug(`NODE_ENV: ${process.env.NODE_ENV}`);
     logger.debug(`SECRET: ${process.env.SECRET}`);
-    logger.debug(`MAIL_HOST: ${process.env.MAIL_HOST}`);
-    logger.debug(`MAIL_PORT: ${process.env.MAIL_PORT}`);
-    logger.debug(`MAIL_USER: ${process.env.MAIL_USER}`);
-    logger.debug(`MAIL_PASS: ${process.env.MAIL_PASS}`);
 
 
     // Validación silenciosa (solo muestra error si falla)
-    const requiredEnvVars = ['FIREBASE_CONFIG_PATH', 'SECRET', 'MAIL_HOST', 'MAIL_PORT', 'MAIL_USER', 'MAIL_PASS'];
+    const requiredEnvVars = ['FIREBASE_CONFIG_PATH', 'SECRET'];
     const missingVars = requiredEnvVars.filter(v => !process.env[v]);
     if (missingVars.length > 0) {
       throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
