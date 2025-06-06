@@ -18,8 +18,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'localhost') {
     httpsOptions = {
-      key: fs.readFileSync(path.join(__dirname, '..', 'cert', 'key.pem')),
-      cert: fs.readFileSync(path.join(__dirname, '..', 'cert', 'cert.pem')),
+      key: fs.readFileSync('./cert/key.pem'),
+      cert: fs.readFileSync('./cert/cert.pem'),
     };
   } else {
     logger.log('No Necisita Certificados ssl');
@@ -33,12 +33,13 @@ async function bootstrap() {
     logger.debug(`NODE_ENV: ${process.env.NODE_ENV}`);
     logger.debug(`SECRET: ${process.env.SECRET}`);
 
-
     // Validación silenciosa (solo muestra error si falla)
     const requiredEnvVars = ['FIREBASE_CONFIG_PATH', 'SECRET'];
-    const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+    const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
     if (missingVars.length > 0) {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(', ')}`,
+      );
     }
 
     // Create NestJS application
