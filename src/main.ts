@@ -4,7 +4,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
 import { config } from 'dotenv';
 import * as fs from 'fs';
-import * as path from 'path';
 
 interface HttpsOptions {
   key: Buffer;
@@ -16,14 +15,10 @@ async function bootstrap() {
   let httpsOptions: HttpsOptions | undefined;
   const logger = new Logger('Bootstrap');
 
-  if (process.env.NODE_ENV !== 'localhost') {
-    httpsOptions = {
-      key: fs.readFileSync('./cert/key.pem'),
-      cert: fs.readFileSync('./cert/cert.pem'),
-    };
-  } else {
-    logger.log('No Necisita Certificados ssl');
-  }
+  httpsOptions = {
+    key: fs.readFileSync('./cert/key.pem'),
+    cert: fs.readFileSync('./cert/cert.pem'),
+  };
 
   try {
     logger.log('Starting application initialization...');
