@@ -21,7 +21,7 @@ async function bootstrap() {
   };
 
   try {
-    logger.log('Starting application initialization');
+    logger.log('Starting application initialization...');
     logger.debug('Environment variables:');
     logger.debug(`FIREBASE_CONFIG_PATH: ${process.env.FIREBASE_CONFIG_PATH}`);
     logger.debug(`PORT: ${process.env.PORT}`);
