@@ -8,7 +8,7 @@ import { FirebaseModule } from 'src/firebase/firebase.module';
 
 @Module({
   imports: [FirebaseModule, CacheModule.register()],
-  controllers: [SkillsController],
   providers: [SkillsService, FirestoreService],
+  controllers: [SkillsController],
 })
-export class SkillsModule { }
+export class SkillsModule {}

@@ -1,39 +1,39 @@
-// src/skills/dto/create-skill.dto.ts
-import { IsString, IsArray, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateSkillDto {
-    @ApiProperty({
-        example: 'NestJS Development',
-        description: 'The title of the skill',
-        required: true,
-    })
-    @IsString()
-    title: string;
+export class TechnologyDto {
+  @ApiProperty()
+  name: string;
+}
 
-    @ApiProperty({
-        example: 'Building scalable server-side applications with NestJS framework',
-        description: 'Detailed description of the skill',
-        required: true,
-    })
-    @IsString()
-    description: string;
+export class SkillItemDto {
+  @ApiProperty()
+  title: string;
 
-    @ApiProperty({
-        example: 'https://example.com/icons/nestjs.png',
-        description: 'URL to an icon representing the skill',
-        required: true,
-    })
-    @IsUrl()
-    icon: string;
+  @ApiProperty()
+  description: string;
 
-    @ApiProperty({
-        example: ['NestJS', 'TypeScript', 'Node.js'],
-        description: 'Array of technologies related to this skill',
-        type: [String],
-        required: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    technologies: string[];
+  @ApiProperty()
+  icon: string;
+
+  @ApiProperty({ type: [TechnologyDto] })
+  technologies: TechnologyDto[];
+}
+
+export class SkillCategoryDto {
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  icon: string;
+
+  @ApiProperty({ type: [SkillItemDto] })
+  skills: SkillItemDto[];
+}
+
+export class GroupedSkillsDto {
+  @ApiProperty({ type: [SkillCategoryDto] })
+  categories: SkillCategoryDto[];
+
+  @ApiProperty()
+  lastUpdated: Date;
 }

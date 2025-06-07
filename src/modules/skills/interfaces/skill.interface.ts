@@ -1,10 +1,21 @@
-// src/skills/interfaces/skill.interface.ts
-export interface Skill {
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    technologies: string[];
-    createdAt?: Date;
-    updatedAt?: Date;
+export interface Technology {
+  name: string;
+}
+
+export interface SkillItem {
+  title: string;
+  description: string;
+  icon: string;
+  technologies: Technology[];
+}
+
+export interface SkillCategory {
+  name: string;
+  icon: string;
+  skills: SkillItem[];
+}
+
+export interface GroupedSkills {
+  categories: SkillCategory[];
+  lastUpdated: Date;
 }
