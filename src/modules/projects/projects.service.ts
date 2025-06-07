@@ -40,6 +40,7 @@ export class ProjectsService {
                 views: data.views || [],
                 createdAt: this.parseDate(data.createdAt),
                 updatedAt: this.parseDate(data.updatedAt),
+                tasks: data.tasks
             };
             return project;
         } catch (error) {
