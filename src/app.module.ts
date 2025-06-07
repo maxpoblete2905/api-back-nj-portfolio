@@ -10,6 +10,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { MailModule } from './mail/mail.module';
 import { HealthController } from './health.controller';
+import { CacheController } from './cache.controller';
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { HealthController } from './health.controller';
     ContactsModule,
     MailModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, CacheController],
 })
-export class AppModule { }
+export class AppModule {}
