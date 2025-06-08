@@ -20,6 +20,7 @@ import {
     ApiResponse,
     ApiParam,
     ApiBody,
+    ApiSecurity,
   } from '@nestjs/swagger';
   import { Technology } from './interfaces/technology.interface';
   import { Cache } from 'cache-manager';
@@ -27,6 +28,7 @@ import {
 import { ApiKeyGuard } from 'src/auth/api-key.guard';
   
   @ApiTags('technologies')
+  @ApiSecurity('api-key')
   @Controller('technologies')
   @UseGuards(ApiKeyGuard)
   export class TechnologiesController {

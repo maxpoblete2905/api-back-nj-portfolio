@@ -11,14 +11,17 @@ import { ContactsModule } from './modules/contacts/contacts.module';
 import { MailModule } from './mail/mail.module';
 import { HealthController } from './health.controller';
 import { CacheController } from './cache.controller';
+import * as memoryStore from 'cache-manager-memory-store';
 
 @Module({
   imports: [
     FirebaseModule,
     ProjectsModule,
     CacheModule.register({
-      ttl: 30, // Tiempo de vida en segundos (30s)
-      max: 100, // Máximo número de items en caché
+      isGlobal: true,
+      store: memoryStore,
+      ttl: 30, // Tiempo de vida en segundos
+      max: 100, // Máximo número de elementos
     }),
     SkillsModule,
     PersonalInformationModule,

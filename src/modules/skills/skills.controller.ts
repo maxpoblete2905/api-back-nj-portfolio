@@ -1,11 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { SkillsService } from './skills.service';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiSecurity,
+} from '@nestjs/swagger';
 import { GroupedSkillsDto } from './dto/create-skill.dto';
 import { SkillCategory } from './interfaces/skill.interface';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('Skills')
+@ApiSecurity('api-key')
 @Controller('skills')
+@UseGuards(ApiKeyGuard)
 export class SkillsController {
   constructor(private readonly skillsService: SkillsService) {}
 

@@ -19,6 +19,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiSecurity,
 } from '@nestjs/swagger';
 import { Project } from './entities/project.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -28,12 +29,13 @@ import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('projects')
 @Controller('projects')
+@ApiSecurity('api-key')
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
   constructor(
     private readonly projectsService: ProjectsService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
-  ) { }
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
@@ -50,7 +52,10 @@ export class ProjectsController {
   async create(@Body() createProjectDto: CreateProjectDto) {
     const result = await this.projectsService.create(createProjectDto);
     if (!result.success) {
-      throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        result.message,
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     // Invalidar caché de lista de proyectos
@@ -70,15 +75,18 @@ export class ProjectsController {
     const cached = await this.cacheManager.get(cacheKey);
 
     if (cached) {
-      console.log("Retornando proyectos desde caché");
+      console.log('Retornando proyectos desde caché');
       return cached;
     }
 
-    console.log("Ejecutando consulta real (no caché)");
+    console.log('Ejecutando consulta real (no caché)');
     const result = await this.projectsService.findAll();
 
     if (!result.success) {
-      throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        result.message,
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const data = result.data || [];
@@ -99,16 +107,19 @@ export class ProjectsController {
     const cached = await this.cacheManager.get(cacheKey);
 
     if (cached) {
-      console.log("Retornando proyecto desde caché");
+      console.log('Retornando proyecto desde caché');
       return cached;
     }
 
-    console.log("Ejecutando consulta real (no caché)");
+    console.log('Ejecutando consulta real (no caché)');
     const result = await this.projectsService.findOne(id);
 
     if (!result.success) {
       await this.cacheManager.del(cacheKey);
-      throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        result.message,
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     await this.cacheManager.set(cacheKey, result.data, 0);
@@ -131,13 +142,16 @@ export class ProjectsController {
     const result = await this.projectsService.update(id, updateProjectDto);
 
     if (!result.success) {
-      throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        result.message,
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     // Actualizar cachés afectadas
     await Promise.all([
       this.cacheManager.del(`project_${id}`),
-      this.cacheManager.del('all_projects')
+      this.cacheManager.del('all_projects'),
     ]);
 
     return result.data;
@@ -154,13 +168,16 @@ export class ProjectsController {
     const result = await this.projectsService.remove(id);
 
     if (!result.success) {
-      throw new HttpException(result.message, result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        result.message,
+        result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     // Invalidar cachés afectadas
     await Promise.all([
       this.cacheManager.del(`project_${id}`),
-      this.cacheManager.del('all_projects')
+      this.cacheManager.del('all_projects'),
     ]);
 
     return { message: result.message };
