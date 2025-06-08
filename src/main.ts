@@ -9,13 +9,13 @@ async function bootstrap() {
   config();
   const logger = new Logger('Bootstrap');
 
-  const httpsOptions = {
-    key: fs.readFileSync('./cert/key.pem'),
-    cert: fs.readFileSync('./cert/cert.pem'),
-  };
+  // const httpsOptions = {
+  //   key: fs.readFileSync('./cert/key.pem'),
+  //   cert: fs.readFileSync('./cert/cert.pem'),
+  // };
 
   const app = await NestFactory.create(AppModule, {
-    httpsOptions,
+    // httpsOptions,
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 

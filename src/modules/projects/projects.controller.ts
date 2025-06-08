@@ -24,7 +24,6 @@ import {
 import { Project } from './entities/project.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('projects')
@@ -32,10 +31,7 @@ import { ApiKeyGuard } from 'src/auth/api-key.guard';
 @ApiSecurity('api-key')
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
-  constructor(
-    private readonly projectsService: ProjectsService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
@@ -58,8 +54,6 @@ export class ProjectsController {
       );
     }
 
-    // Invalidar caché de lista de proyectos
-    await this.cacheManager.del('all_projects');
     return result.data;
   }
 
@@ -71,14 +65,6 @@ export class ProjectsController {
     type: [Project],
   })
   async findAll() {
-    const cacheKey = 'all_projects';
-    const cached = await this.cacheManager.get(cacheKey);
-
-    if (cached) {
-      console.log('Retornando proyectos desde caché');
-      return cached;
-    }
-
     console.log('Ejecutando consulta real (no caché)');
     const result = await this.projectsService.findAll();
 
@@ -90,7 +76,6 @@ export class ProjectsController {
     }
 
     const data = result.data || [];
-    await this.cacheManager.set(cacheKey, data, 0); // TTL 0 = sin expiración
     return data;
   }
 
@@ -103,26 +88,15 @@ export class ProjectsController {
     type: Project,
   })
   async findOne(@Param('id') id: string) {
-    const cacheKey = `project_${id}`;
-    const cached = await this.cacheManager.get(cacheKey);
-
-    if (cached) {
-      console.log('Retornando proyecto desde caché');
-      return cached;
-    }
-
     console.log('Ejecutando consulta real (no caché)');
     const result = await this.projectsService.findOne(id);
 
     if (!result.success) {
-      await this.cacheManager.del(cacheKey);
       throw new HttpException(
         result.message,
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    await this.cacheManager.set(cacheKey, result.data, 0);
     return result.data;
   }
 
@@ -148,12 +122,6 @@ export class ProjectsController {
       );
     }
 
-    // Actualizar cachés afectadas
-    await Promise.all([
-      this.cacheManager.del(`project_${id}`),
-      this.cacheManager.del('all_projects'),
-    ]);
-
     return result.data;
   }
 
@@ -173,12 +141,6 @@ export class ProjectsController {
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    // Invalidar cachés afectadas
-    await Promise.all([
-      this.cacheManager.del(`project_${id}`),
-      this.cacheManager.del('all_projects'),
-    ]);
 
     return { message: result.message };
   }

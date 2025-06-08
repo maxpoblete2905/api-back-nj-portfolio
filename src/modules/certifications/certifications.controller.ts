@@ -25,7 +25,6 @@ import {
 } from '@nestjs/swagger';
 import { Certification } from './interfaces/certification.interface';
 import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
 @ApiTags('certifications')
@@ -33,10 +32,7 @@ import { ApiKeyGuard } from 'src/auth/api-key.guard';
 @Controller('certifications')
 @UseGuards(ApiKeyGuard)
 export class CertificationsController {
-  constructor(
-    private readonly certificationsService: CertificationsService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  constructor(private readonly certificationsService: CertificationsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new certification' })
@@ -55,7 +51,6 @@ export class CertificationsController {
       );
     }
 
-    await this.cacheManager.del('all_certifications');
     return result.data;
   }
 
@@ -67,13 +62,6 @@ export class CertificationsController {
     type: [CreateCertificationDto],
   })
   async findAll() {
-    const cacheKey = 'all_certifications';
-    const cached = await this.cacheManager.get<Certification[]>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
     const result = await this.certificationsService.findAll();
     if (!result.success) {
       throw new HttpException(
@@ -83,7 +71,6 @@ export class CertificationsController {
     }
 
     const data = result.data || [];
-    await this.cacheManager.set(cacheKey, data, 3600000); // Cache for 1 hour
     return data;
   }
 
@@ -96,13 +83,6 @@ export class CertificationsController {
     type: CreateCertificationDto,
   })
   async findOne(@Param('id') id: string) {
-    const cacheKey = `certification_${id}`;
-    const cached = await this.cacheManager.get<Certification>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
     const result = await this.certificationsService.findOne(id);
     if (!result.success) {
       throw new HttpException(
@@ -111,7 +91,6 @@ export class CertificationsController {
       );
     }
 
-    await this.cacheManager.set(cacheKey, result.data, 3600000); // Cache for 1 hour
     return result.data;
   }
 
@@ -136,11 +115,6 @@ export class CertificationsController {
       );
     }
 
-    await Promise.all([
-      this.cacheManager.del(`certification_${id}`),
-      this.cacheManager.del('all_certifications'),
-    ]);
-
     return result.data;
   }
 
@@ -160,15 +134,9 @@ export class CertificationsController {
       );
     }
 
-    await Promise.all([
-      this.cacheManager.del(`certification_${id}`),
-      this.cacheManager.del('all_certifications'),
-    ]);
-
     return { message: result.message };
   }
 
-  // Agregar este endpoint al CertificationsController
   @Post('seed')
   @ApiOperation({ summary: 'Seed initial certifications data' })
   @ApiResponse({
@@ -188,7 +156,6 @@ export class CertificationsController {
       );
     }
 
-    await this.cacheManager.del('all_certifications');
     return { message: result.message };
   }
 }

@@ -21,9 +21,6 @@ import {
   ApiBody,
   ApiSecurity,
 } from '@nestjs/swagger';
-import { PersonalInformation } from './interfaces/personal-info.interface';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PersonalInfoService } from './personal-information.service';
 import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
@@ -32,10 +29,7 @@ import { ApiKeyGuard } from 'src/auth/api-key.guard';
 @Controller('personal-information')
 @UseGuards(ApiKeyGuard)
 export class PersonalInfoController {
-  constructor(
-    private readonly personalInfoService: PersonalInfoService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  constructor(private readonly personalInfoService: PersonalInfoService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create personal information' })
@@ -54,7 +48,6 @@ export class PersonalInfoController {
       );
     }
 
-    await this.cacheManager.del('personal_info');
     return result.data;
   }
 
@@ -66,13 +59,6 @@ export class PersonalInfoController {
     type: [CreatePersonalInfoDto],
   })
   async findAll() {
-    const cacheKey = 'personal_info_all';
-    const cached = await this.cacheManager.get<PersonalInformation[]>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
     const result = await this.personalInfoService.findAll();
     if (!result.success) {
       throw new HttpException(
@@ -82,7 +68,6 @@ export class PersonalInfoController {
     }
 
     const data = result.data || [];
-    await this.cacheManager.set(cacheKey, data);
     return data;
   }
 
@@ -95,13 +80,6 @@ export class PersonalInfoController {
     type: CreatePersonalInfoDto,
   })
   async findOne(@Param('id') id: string) {
-    const cacheKey = `personal_info_${id}`;
-    const cached = await this.cacheManager.get<PersonalInformation>(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
     const result = await this.personalInfoService.findOne(id);
     if (!result.success) {
       throw new HttpException(
@@ -110,7 +88,6 @@ export class PersonalInfoController {
       );
     }
 
-    await this.cacheManager.set(cacheKey, result.data);
     return result.data;
   }
 
@@ -134,12 +111,6 @@ export class PersonalInfoController {
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    await Promise.all([
-      this.cacheManager.del(`personal_info_${id}`),
-      this.cacheManager.del('personal_info_all'),
-    ]);
-
     return result.data;
   }
 
@@ -158,11 +129,6 @@ export class PersonalInfoController {
         result.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    await Promise.all([
-      this.cacheManager.del(`personal_info_${id}`),
-      this.cacheManager.del('personal_info_all'),
-    ]);
 
     return { message: result.message };
   }
