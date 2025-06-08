@@ -1,13 +1,12 @@
 import { FirestoreService } from 'src/firebase/firestore.service';
 import {
-  GroupedSkills,
+  SkillCategory,
   SkillItem,
   Technology,
 } from './interfaces/skill.interface';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { StandardResponse } from 'src/interface/standard-response.interface';
 
 @Injectable()
 export class SkillsService {
@@ -34,19 +33,14 @@ export class SkillsService {
     };
   }
 
-  async findAll(): Promise<StandardResponse<GroupedSkills>> {
+  async findAll(): Promise<SkillCategory> {
     this.logger.log('Fetching all skills grouped by categories');
     const cacheKey = 'grouped_skills';
 
     try {
-      const cached = await this.cacheService.get<GroupedSkills>(cacheKey);
+      const cached = await this.cacheService.get<SkillCategory>(cacheKey);
       if (cached) {
-        return {
-          success: true,
-          message: 'Skills retrieved from cache',
-          data: cached,
-          statusCode: 200,
-        };
+        return cached;
       }
 
       const result = await this.firestoreService.getDocs(this.collection);
@@ -67,29 +61,18 @@ export class SkillsService {
         };
       });
 
-      const groupedSkills: GroupedSkills = {
-        categories,
-        lastUpdated: new Date(),
-      };
-
-      await this.cacheService.set(cacheKey, groupedSkills, 3600000);
-
-      return {
-        success: true,
-        message: 'Skills retrieved successfully',
-        data: groupedSkills,
-        statusCode: 200,
-      };
+      await this.cacheService.set(cacheKey, categories, 3600000);
+      return categories as unknown as SkillCategory;
     } catch (error) {
       this.logger.error(
         `Failed to fetch skills: ${error.message}`,
         error.stack,
       );
+      // Return a default value to satisfy the return type
       return {
-        success: false,
-        message: 'Failed to fetch skills',
-        error: error.message,
-        statusCode: 500,
+        name: '',
+        icon: '',
+        skills: [],
       };
     }
   }

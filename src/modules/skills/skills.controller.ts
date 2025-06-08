@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { SkillsService } from './skills.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { StandardResponse } from 'src/interface/standard-response.interface';
 import { GroupedSkillsDto } from './dto/create-skill.dto';
+import { SkillCategory } from './interfaces/skill.interface';
 
 @ApiTags('Skills')
 @Controller('skills')
@@ -24,7 +24,7 @@ export class SkillsController {
     status: 500,
     description: 'Error interno del servidor',
   })
-  async getGroupedSkills(): Promise<StandardResponse<any>> {
+  async getGroupedSkills(): Promise<SkillCategory> {
     return this.skillsService.findAll();
   }
 }

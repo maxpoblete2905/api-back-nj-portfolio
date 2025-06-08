@@ -14,8 +14,3 @@ export interface SkillCategory {
   icon: string;
   skills: SkillItem[];
 }
-
-export interface GroupedSkills {
-  categories: SkillCategory[];
-  lastUpdated: Date;
-}
