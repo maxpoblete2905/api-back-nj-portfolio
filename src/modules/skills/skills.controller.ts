@@ -1,12 +1,13 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { SkillsService } from './skills.service';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiSecurity,
+  ApiBody,
 } from '@nestjs/swagger';
-import { GroupedSkillsDto } from './dto/create-skill.dto';
+import { GroupedSkillsDto, CreateSkillDto } from './dto/create-skill.dto';
 import { SkillCategory } from './interfaces/skill.interface';
 import { ApiKeyGuard } from 'src/auth/api-key.guard';
 
@@ -34,5 +35,27 @@ export class SkillsController {
   })
   async getGroupedSkills(): Promise<SkillCategory> {
     return this.skillsService.findAll();
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Crear una nueva categoría de habilidades o añadir skills',
+    description: 'Crea una nueva categoría o añade skills a una existente',
+  })
+  @ApiBody({ type: CreateSkillDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Categoría/skill creada exitosamente',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de entrada inválidos',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor',
+  })
+  async createSkill(@Body() createSkillDto: CreateSkillDto): Promise<void> {
+    return this.skillsService.create(createSkillDto);
   }
 }

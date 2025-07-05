@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue API NestJS en EC2 con GitHub Actions
 
----
+-------
 
 ## 🧷 Configuración Inicial de la Instancia EC2
 

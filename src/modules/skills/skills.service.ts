@@ -4,8 +4,7 @@ import {
   SkillItem,
   Technology,
 } from './interfaces/skill.interface';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { Cache } from 'cache-manager';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class SkillsService {
@@ -62,6 +61,20 @@ export class SkillsService {
         icon: '',
         skills: [],
       };
+    }
+  }
+
+  async create(createSkillDto: any): Promise<void> {
+    this.logger.log('Creating new skill category or adding skills');
+    try {
+      await this.firestoreService.createDoc(this.collection, createSkillDto);
+      this.logger.log('Skill operation completed successfully');
+    } catch (error) {
+      this.logger.error(
+        `Failed to create/update skill: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 }

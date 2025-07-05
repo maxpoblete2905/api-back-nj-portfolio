@@ -1,39 +1,42 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TechnologyDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'NestJS', description: 'Nombre de la tecnología' })
   name: string;
 }
 
 export class SkillItemDto {
-  @ApiProperty()
+  @ApiProperty({
+    example: 'Backend Development',
+    description: 'Título de la skill',
+  })
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'Desarrollo de APIs robustas',
+    description: 'Descripción de la skill',
+  })
   description: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'server', description: 'Icono representativo' })
   icon: string;
 
-  @ApiProperty({ type: [TechnologyDto] })
+  @ApiProperty({
+    type: [TechnologyDto],
+    description: 'Tecnologías relacionadas',
+  })
   technologies: TechnologyDto[];
 }
 
-export class SkillCategoryDto {
-  @ApiProperty()
+export class CreateSkillDto {
+  @ApiProperty({ example: 'Backend', description: 'Nombre de la categoría' })
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'database', description: 'Icono de la categoría' })
   icon: string;
 
-  @ApiProperty({ type: [SkillItemDto] })
+  @ApiProperty({ type: [SkillItemDto], description: 'Skills a agregar' })
   skills: SkillItemDto[];
 }
 
-export class GroupedSkillsDto {
-  @ApiProperty({ type: [SkillCategoryDto] })
-  categories: SkillCategoryDto[];
-
-  @ApiProperty()
-  lastUpdated: Date;
-}
+export class GroupedSkillsDto extends CreateSkillDto {}

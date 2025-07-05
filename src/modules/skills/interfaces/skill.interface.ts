@@ -14,3 +14,9 @@ export interface SkillCategory {
   icon: string;
   skills: SkillItem[];
 }
+
+export interface CreateSkillPayload {
+  name: string;
+  icon: string;
+  skills: SkillItem[];
+}
